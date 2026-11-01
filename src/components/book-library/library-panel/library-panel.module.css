@@ -1,0 +1,61 @@
+.panel {
+  display: grid;
+  gap: var(--space-5);
+  padding-block: clamp(var(--space-4), 3vw, var(--space-6));
+  min-inline-size: 0;
+}
+
+.field {
+  display: grid;
+  flex: 1 1 var(--space-48);
+  min-inline-size: 0;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.entries {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--font-size-lg);
+}
+
+.sectionTitle svg {
+  inline-size: var(--space-5);
+  block-size: var(--space-5);
+  flex-shrink: 0;
+  color: var(--color-primary);
+}
+
+.libraryHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.libraryLayout {
+  display: grid;
+  gap: var(--space-6);
+  align-items: start;
+}
+
+.libraryContent {
+  display: grid;
+  gap: var(--space-5);
+  min-inline-size: 0;
+}
+
+@media (--lg) {
+  .libraryLayout {
+    grid-template-columns: var(--space-64) minmax(0, 1fr);
+  }
+}

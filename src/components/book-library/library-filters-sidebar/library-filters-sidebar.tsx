@@ -36,7 +36,7 @@ export default function LibraryFiltersSidebar({
           </button>
         )}
       </div>
-      {sections.map((section, index) => {
+      {sections.map((section) => {
         const selected = section.options.find(
           (option) => String(option.value) === values[section.key],
         );

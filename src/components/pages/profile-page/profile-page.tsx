@@ -41,14 +41,35 @@ export default function ProfilePage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
-    fetchProfile();
-  }, []);
-
-  useEffect(() => {
-    if (profile?.hasAvatar) {
-      setAvatarPreview(`/api/profile/avatar?t=${Date.now()}`);
+    let active = true;
+    async function loadProfile() {
+      try {
+        const res = await fetch("/api/profile");
+        if (!active) return;
+        if (res.ok) {
+          const data = await res.json();
+          if (!active) return;
+          setProfile(data);
+          setName(data.name);
+          setAvatarPreview(
+            data.hasAvatar ? `/api/profile/avatar?t=${Date.now()}` : null,
+          );
+        } else {
+          setMessage({ type: "error", text: t("errorFetchingProfile") });
+        }
+      } catch {
+        if (active) {
+          setMessage({ type: "error", text: t("errorFetchingProfile") });
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
     }
-  }, [profile?.hasAvatar]);
+    void loadProfile();
+    return () => {
+      active = false;
+    };
+  }, [t]);
 
   useEffect(() => {
     if (message) {
@@ -56,24 +77,6 @@ export default function ProfilePage() {
       return () => clearTimeout(timer);
     }
   }, [message]);
-
-  const fetchProfile = async () => {
-    try {
-      setLoading(true);
-      const res = await fetch("/api/profile");
-      if (res.ok) {
-        const data = await res.json();
-        setProfile(data);
-        setName(data.name);
-      } else {
-        setMessage({ type: "error", text: t("errorFetchingProfile") });
-      }
-    } catch (error) {
-      setMessage({ type: "error", text: t("errorFetchingProfile") });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -110,7 +113,7 @@ export default function ProfilePage() {
         const data = await res.json();
         setMessage({ type: "error", text: data.error || t("errorUploadingAvatar") });
       }
-    } catch (error) {
+    } catch {
       setMessage({ type: "error", text: t("errorUploadingAvatar") });
     } finally {
       setIsSaving(false);
@@ -139,7 +142,7 @@ export default function ProfilePage() {
       } else {
         setMessage({ type: "error", text: t("errorRemovingAvatar") });
       }
-    } catch (error) {
+    } catch {
       setMessage({ type: "error", text: t("errorRemovingAvatar") });
     } finally {
       setIsSaving(false);
@@ -171,7 +174,7 @@ export default function ProfilePage() {
         const data = await res.json();
         setMessage({ type: "error", text: data.error || t("errorUpdatingProfile") });
       }
-    } catch (error) {
+    } catch {
       setMessage({ type: "error", text: t("errorUpdatingProfile") });
     } finally {
       setIsSaving(false);
@@ -214,7 +217,7 @@ export default function ProfilePage() {
         const data = await res.json();
         setMessage({ type: "error", text: data.error || t("errorChangingPassword") });
       }
-    } catch (error) {
+    } catch {
       setMessage({ type: "error", text: t("errorChangingPassword") });
     } finally {
       setIsSaving(false);
@@ -247,6 +250,8 @@ export default function ProfilePage() {
           <h2>{t("avatarSection")}</h2>
           <div className={styles.avatarContainer}>
             {avatarPreview ? (
+              // Avatar is a blob/API URL, which next/image cannot optimize.
+              // eslint-disable-next-line @next/next/no-img-element
               <img src={avatarPreview} alt={profile.name} className={styles.avatarImage} />
             ) : (
               <div className={styles.avatarPlaceholder}>{profile.name.charAt(0).toUpperCase()}</div>

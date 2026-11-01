@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { Dialog } from "@ark-ui/react/dialog";
 import DialogOverlay from "@/components/dialog-overlay/dialog-overlay";
 import { X, Edit } from "lucide-react";
@@ -35,7 +35,6 @@ export default function BookDetailsDialog({
   const [coverUrl, setCoverUrl] = useState(
     entry.bookOverrides?.coverUrl || entry.book.coverUrl || "",
   );
-  const submitRef = useRef<HTMLButtonElement>(null);
 
   function parseAuthors(text: string): string[] {
     return text

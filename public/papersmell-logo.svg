@@ -1,15 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="2 5 60 60" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="60 60 648 648" fill="none" stroke-linecap="round" stroke-linejoin="round">
   <title>PaperSmell</title>
-  <g stroke="#619e9f">
-    <rect x="6" y="44" width="52" height="12" rx="2.5"/>
-    <path d="M13 44v12M51 48h-30M51 52h-30"/>
+  <circle cx="384" cy="384" r="298" stroke="#619e9f" stroke-width="10"/>
+  <g stroke="#619e9f" stroke-width="10">
+    <path d="M258 418Q330 410 383 458V582Q330 535 218 527Z" fill="none"/>
+    <path d="M510 418Q438 410 385 458V582Q438 535 550 527Z" fill="none"/>
+    <path d="M238 440L190 560M214 462L160 596"/>
+    <path d="M530 440L578 560M554 462L608 596"/>
+    <path d="M190 560Q300 540 372 585M578 560Q468 540 396 585"/>
   </g>
-  <g stroke="#ff9182">
-    <rect x="10" y="31" width="46" height="13" rx="2.5"/>
-    <path d="M49 31v13M14 35.5h28M14 39.5h28"/>
-  </g>
-  <g stroke="#619e9f" transform="rotate(-7 30 24)">
-    <rect x="8" y="18" width="44" height="12" rx="2.5"/>
-    <path d="M15 18v12M48 22h-27M48 26h-27"/>
-  </g>
+  <path fill="#619e9f" stroke="#619e9f" stroke-width="6" d="M160 592Q300 578 384 598Q468 578 608 592L618 610L410 612Q384 632 358 612L150 610Z"/>
+  <g fill="#ff9182"><path d="M292 300C265 220 300 140 395 138C480 135 520 200 500 265C485 315 440 325 400 312C450 305 480 280 478 235C475 185 430 165 395 168C330 172 285 225 292 300Z"/><path d="M418 196C370 205 340 235 345 285C350 340 395 385 410 430C418 460 412 495 405 525C440 470 440 430 410 385C385 345 375 300 380 260C382 230 395 210 418 196Z"/></g>
 </svg>

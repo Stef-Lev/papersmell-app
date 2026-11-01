@@ -36,7 +36,7 @@ export function AvatarProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (session?.user?.id && !hasFetched) {
-      // eslint-disable-next-line react-hooks/exhaustive-deps, react-hooks/set-state-in-effect
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchAvatarData();
     }
   }, [session?.user?.id, hasFetched]);

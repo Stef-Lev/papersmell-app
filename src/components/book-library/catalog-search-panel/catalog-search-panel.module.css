@@ -1,0 +1,137 @@
+.panel {
+  display: grid;
+  gap: var(--space-5);
+  padding-block: clamp(var(--space-4), 3vw, var(--space-6));
+  min-inline-size: 0;
+  border-block-end: 1px solid var(--color-border);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--space-3);
+}
+
+.searchForm {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.searchForm > .field {
+  grid-column: 1 / -1;
+}
+
+.searchForm > button {
+  min-inline-size: 0;
+  padding-inline: var(--space-2);
+}
+
+.field {
+  display: grid;
+  flex: 1 1 var(--space-48);
+  min-inline-size: 0;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.results {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.result {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+}
+
+.result > div {
+  min-inline-size: 0;
+}
+
+.addButton {
+  margin-block-start: var(--space-3);
+}
+
+.cover {
+  inline-size: var(--space-14);
+  border-radius: var(--radius-md);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--font-size-base);
+}
+
+.details {
+  margin-block: var(--space-1) 0;
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--font-size-lg);
+}
+
+.sectionTitle svg {
+  inline-size: var(--space-5);
+  block-size: var(--space-5);
+  flex-shrink: 0;
+  color: var(--color-primary);
+}
+
+.scannerVideo {
+  inline-size: 100%;
+  max-inline-size: 25rem;
+  border-radius: var(--radius-md);
+}
+
+.manualForm {
+  display: grid;
+  gap: var(--space-3);
+  padding-block-start: var(--space-4);
+}
+
+.manualDetails {
+  padding-block-start: var(--space-4);
+  border-block-start: 1px solid var(--color-border);
+}
+
+.manualDetails summary {
+  color: var(--color-primary);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.hidden {
+  display: none;
+}
+
+@media (--md) {
+  .searchForm {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+  }
+
+  .searchForm > button {
+    padding-inline: var(--space-4);
+  }
+
+  .manualForm {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
