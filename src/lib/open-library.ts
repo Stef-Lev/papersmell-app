@@ -15,7 +15,7 @@ export type CatalogBook = {
 
 /** A book about to be added to a library: a catalog result or a manual entry. */
 export type NewBook = Omit<CatalogBook, "source" | "externalId"> & {
-  source: BookSource.OpenLibrary | BookSource.Bookshark | BookSource.Manual;
+  source: BookSource.OpenLibrary | BookSource.Manual;
   externalId?: string;
 };
 
