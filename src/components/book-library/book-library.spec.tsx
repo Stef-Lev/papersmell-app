@@ -887,7 +887,7 @@ describe("BookLibrary", () => {
       await renderSearch();
 
       expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-        t("libraryWorkspace.addBooks"),
+        t("nav.searchLabel"),
       );
       expect(
         screen.getByRole("searchbox", { name: t("libraryWorkspace.searchBooks") }),

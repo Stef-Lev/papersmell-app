@@ -189,7 +189,7 @@
     }
   },
   "libraryWorkspace": {
-    "title": "Title",
+    "title": "My Library",
     "description": "Organize your books into shelves and collections, and keep your ratings and reviews.",
     "loadError": "Your library could not be loaded.",
     "genericError": "Something went wrong. Please try again.",

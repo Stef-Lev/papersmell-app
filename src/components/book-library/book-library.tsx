@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import RouteLoading from "@/components/route-loading/route-loading";
-import { BookOpen } from "lucide-react";
+import { Library, Search } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { toast } from "react-toastify";
 import CatalogSearchPanel from "@/components/book-library/catalog-search-panel/catalog-search-panel";
@@ -32,6 +32,7 @@ export default function BookLibrary({
   initialFilters = {},
 }: BookLibraryProps) {
   const t = useTranslations("libraryWorkspace");
+  const nav = useTranslations("nav");
   const isSearch = mode === LibraryMode.Search;
   const [entries, setEntries] = useState<BookEntryData[]>([]);
   const [collections, setCollections] = useState<BookCollection[]>([]);
@@ -182,11 +183,15 @@ export default function BookLibrary({
       {!libraryLoaded && !libraryLoadFailed && <RouteLoading />}
       <section className={styles.hero}>
         <span className={styles.heroIcon}>
-          <BookOpen aria-hidden="true" />
+          {isSearch ? (
+            <Search aria-hidden="true" />
+          ) : (
+            <Library aria-hidden="true" />
+          )}
         </span>
         <div>
           <h1 className={styles.heading}>
-            {isSearch ? t("addBooks") : t("title")}
+            {isSearch ? nav("searchLabel") : t("title")}
           </h1>
         </div>
       </section>
