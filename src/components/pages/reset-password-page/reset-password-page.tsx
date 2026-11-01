@@ -26,11 +26,9 @@ export default function ResetPasswordPage() {
       <AuthPageShell
         title={t("title")}
         description={t("invalidLink")}
-        footer={
-          <Link href="/login">{auth("loginTitle")}</Link>
-        }
+        footer={<Link href="/login">{auth("loginTitle")}</Link>}
       >
-        <p className={styles.error}>{t("invalidLink")}</p>
+        {null}
       </AuthPageShell>
     );
   }
