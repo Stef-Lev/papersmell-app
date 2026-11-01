@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import Link from "@/components/navigation-link/navigation-link";
-import { ArrowRight, BookOpen, Library, Search } from "lucide-react";
+import Image from "next/image";
+import { ArrowRight, Library, Search } from "lucide-react";
 import styles from "./home-page.module.css";
 
 export default async function HomePage() {
@@ -10,7 +11,14 @@ export default async function HomePage() {
   return (
     <main className={styles.main}>
       <section className={styles.hero}>
-        <span className={styles.heroIcon}><BookOpen aria-hidden="true" /></span>
+        <Image
+          src="/papersmell-logo.svg"
+          alt=""
+          width={96}
+          height={96}
+          priority
+          className={styles.heroLogo}
+        />
         <h1>{t("title")}</h1>
         <p>{t("description")}</p>
       </section>
