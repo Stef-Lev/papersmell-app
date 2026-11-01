@@ -68,10 +68,6 @@
   justify-content: center;
 }
 
-.dangerButton {
-  color: var(--color-danger, #ef4444);
-}
-
 .hint {
   font-size: 0.875rem;
   color: var(--color-text-secondary, #666);

@@ -269,8 +269,7 @@ export default function ProfilePage() {
                 <Button
                   onClick={handleRemoveAvatar}
                   disabled={isSaving}
-                  variant="secondary"
-                  className={styles.dangerButton}
+                  variant="destructive"
                 >
                   <Trash2 size={18} />
                   {t("removeAvatar")}

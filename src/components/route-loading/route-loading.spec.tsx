@@ -11,7 +11,7 @@ describe("RouteLoading", () => {
     expect(status).toHaveClass("loading");
   });
 
-  it("should hide the decorative spinner from assistive technology", () => {
+  it("should hide the decorative logo from assistive technology", () => {
     render(<RouteLoading />);
 
     const status = screen.getByRole("status");
