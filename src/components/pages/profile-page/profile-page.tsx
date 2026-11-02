@@ -4,13 +4,21 @@ import { useState, useRef, useEffect } from "react";
 import { signOut } from "next-auth/react";
 import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
+import { toast } from "react-toastify";
 import { Camera, Trash2, Eye, EyeOff, LogOut } from "lucide-react";
+import Link from "@/components/navigation-link/navigation-link";
 import Button from "@/components/button/button";
 import TextInput from "@/components/text-input/text-input";
-import FeedbackMessage from "@/components/feedback-message/feedback-message";
 import RouteLoading from "@/components/route-loading/route-loading";
 import { useAvatar } from "@/components/avatar-provider/avatar-provider";
+import PreferencesSection from "./preferences-section/preferences-section";
+import { Theme } from "@/lib/preferences";
 import styles from "./profile-page.module.css";
+
+interface ProfilePageProps {
+  isAdmin?: boolean;
+  theme?: Theme;
+}
 
 interface ProfileData {
   id: string;
@@ -19,8 +27,12 @@ interface ProfileData {
   hasAvatar: boolean;
 }
 
-export default function ProfilePage() {
+export default function ProfilePage({
+  theme = Theme.System,
+  isAdmin = false,
+}: ProfilePageProps) {
   const t = useTranslations("pages.profile");
+  const tAdmin = useTranslations("biblionetCopy");
   const { data: session, update: updateSession } = useSession();
   const { refreshAvatar } = useAvatar();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -29,7 +41,6 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const [name, setName] = useState("");
   const [showPasswordForm, setShowPasswordForm] = useState(false);
@@ -55,11 +66,11 @@ export default function ProfilePage() {
             data.hasAvatar ? `/api/profile/avatar?t=${Date.now()}` : null,
           );
         } else {
-          setMessage({ type: "error", text: t("errorFetchingProfile") });
+          toast.error(t("errorFetchingProfile"));
         }
       } catch {
         if (active) {
-          setMessage({ type: "error", text: t("errorFetchingProfile") });
+          toast.error(t("errorFetchingProfile"));
         }
       } finally {
         if (active) setLoading(false);
@@ -71,24 +82,17 @@ export default function ProfilePage() {
     };
   }, [t]);
 
-  useEffect(() => {
-    if (message) {
-      const timer = setTimeout(() => setMessage(null), 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [message]);
-
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      setMessage({ type: "error", text: t("errorInvalidImageType") });
+      toast.error(t("errorInvalidImageType"));
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      setMessage({ type: "error", text: t("errorFileTooLarge") });
+      toast.error(t("errorFileTooLarge"));
       return;
     }
 
@@ -108,13 +112,13 @@ export default function ProfilePage() {
           setProfile({ ...profile, hasAvatar: true });
         }
         await refreshAvatar();
-        setMessage({ type: "success", text: t("successAvatarUploaded") });
+        toast.success(t("successAvatarUploaded"));
       } else {
         const data = await res.json();
-        setMessage({ type: "error", text: data.error || t("errorUploadingAvatar") });
+        toast.error(data.error || t("errorUploadingAvatar"));
       }
     } catch {
-      setMessage({ type: "error", text: t("errorUploadingAvatar") });
+      toast.error(t("errorUploadingAvatar"));
     } finally {
       setIsSaving(false);
       if (fileInputRef.current) {
@@ -138,12 +142,12 @@ export default function ProfilePage() {
           setProfile({ ...profile, hasAvatar: false });
         }
         await refreshAvatar();
-        setMessage({ type: "success", text: t("successAvatarRemoved") });
+        toast.success(t("successAvatarRemoved"));
       } else {
-        setMessage({ type: "error", text: t("errorRemovingAvatar") });
+        toast.error(t("errorRemovingAvatar"));
       }
     } catch {
-      setMessage({ type: "error", text: t("errorRemovingAvatar") });
+      toast.error(t("errorRemovingAvatar"));
     } finally {
       setIsSaving(false);
     }
@@ -153,7 +157,7 @@ export default function ProfilePage() {
     e.preventDefault();
 
     if (!name.trim()) {
-      setMessage({ type: "error", text: t("errorNameRequired") });
+      toast.error(t("errorNameRequired"));
       return;
     }
 
@@ -169,13 +173,13 @@ export default function ProfilePage() {
         const data = await res.json();
         setProfile(data);
         await updateSession({ user: { ...session?.user, name: data.name } });
-        setMessage({ type: "success", text: t("successProfileUpdated") });
+        toast.success(t("successProfileUpdated"));
       } else {
         const data = await res.json();
-        setMessage({ type: "error", text: data.error || t("errorUpdatingProfile") });
+        toast.error(data.error || t("errorUpdatingProfile"));
       }
     } catch {
-      setMessage({ type: "error", text: t("errorUpdatingProfile") });
+      toast.error(t("errorUpdatingProfile"));
     } finally {
       setIsSaving(false);
     }
@@ -185,17 +189,17 @@ export default function ProfilePage() {
     e.preventDefault();
 
     if (!currentPassword || !newPassword || !confirmPassword) {
-      setMessage({ type: "error", text: t("errorAllFieldsRequired") });
+      toast.error(t("errorAllFieldsRequired"));
       return;
     }
 
     if (newPassword.length < 8) {
-      setMessage({ type: "error", text: t("errorPasswordTooShort") });
+      toast.error(t("errorPasswordTooShort"));
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setMessage({ type: "error", text: t("errorPasswordsNotMatching") });
+      toast.error(t("errorPasswordsNotMatching"));
       return;
     }
 
@@ -208,17 +212,17 @@ export default function ProfilePage() {
       });
 
       if (res.ok) {
-        setMessage({ type: "success", text: t("successPasswordChanged") });
+        toast.success(t("successPasswordChanged"));
         setCurrentPassword("");
         setNewPassword("");
         setConfirmPassword("");
         setShowPasswordForm(false);
       } else {
         const data = await res.json();
-        setMessage({ type: "error", text: data.error || t("errorChangingPassword") });
+        toast.error(data.error || t("errorChangingPassword"));
       }
     } catch {
-      setMessage({ type: "error", text: t("errorChangingPassword") });
+      toast.error(t("errorChangingPassword"));
     } finally {
       setIsSaving(false);
     }
@@ -236,14 +240,6 @@ export default function ProfilePage() {
     <main className={styles.main}>
       <div className={styles.container}>
         <h1>{t("title")}</h1>
-
-        {message && (
-          <FeedbackMessage
-            tone={message.type === "success" ? "status" : "error"}
-          >
-            {message.text}
-          </FeedbackMessage>
-        )}
 
         {/* Avatar Section */}
         <section className={styles.section}>
@@ -287,6 +283,16 @@ export default function ProfilePage() {
             <p className={styles.hint}>{t("avatarHint")}</p>
           </div>
         </section>
+
+        <PreferencesSection theme={theme} />
+
+        {isAdmin && (
+          <section className={styles.section}>
+            <Link href="/copy-to-my-database" className={styles.adminLink}>
+              {tAdmin("title")}
+            </Link>
+          </section>
+        )}
 
         {/* Profile Information Section */}
         <section className={styles.section}>

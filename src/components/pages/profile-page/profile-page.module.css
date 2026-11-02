@@ -179,3 +179,29 @@
     width: 100%;
   }
 }
+
+.adminLink {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 100%;
+  min-block-size: var(--space-11);
+  padding-block: var(--space-2-5);
+  padding-inline: var(--space-4);
+  border: 1px solid var(--color-secondary);
+  border-radius: var(--radius-xl);
+  background: var(--color-secondary);
+  color: var(--color-secondary-contrast);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  text-decoration: none;
+}
+
+.adminLink:hover {
+  background: color-mix(in srgb, var(--color-secondary), var(--color-white) 15%);
+}
+
+.adminLink:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}

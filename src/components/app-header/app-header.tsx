@@ -4,7 +4,6 @@ import { getTranslations } from "next-intl/server";
 import { auth } from "@/auth";
 import UserAvatar from "@/components/user-avatar/user-avatar";
 import PreferencesSwitcher from "@/components/preferences-switcher/preferences-switcher";
-import MobileNavigation from "@/components/app-header/mobile-navigation/mobile-navigation";
 import styles from "./app-header.module.css";
 import type { AppHeaderProps } from "./app-header.types";
 
@@ -37,14 +36,6 @@ export default async function AppHeader({ theme }: AppHeaderProps) {
           </Link>
         ))}
       </nav>
-      <MobileNavigation links={links}>
-        <PreferencesSwitcher theme={theme} />
-        <UserAvatar 
-          size="medium"
-          userName={session?.user?.name}
-          userEmail={session?.user?.email}
-        />
-      </MobileNavigation>
       <div className={styles.account}>
         <PreferencesSwitcher theme={theme} />
         <UserAvatar 

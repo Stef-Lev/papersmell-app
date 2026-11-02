@@ -5,6 +5,7 @@
   },
   "nav": {
     "menu": "Menu",
+    "home": "Home",
     "closeMenu": "Close menu",
     "library": "My Library",
     "analytics": "Analytics",
@@ -14,6 +15,7 @@
     "logout": "Log out"
   },
   "preferences": {
+    "title": "Preferences",
     "language": "Language",
     "theme": "Theme",
     "light": "Light",
@@ -282,7 +284,7 @@
     "title": "Copy a book to my database",
     "intro": "Fetch a book from Biblionet by ISBN, check it, and save it to our own catalog.",
     "isbn": "ISBN",
-    "fetch": "Fetch from Biblionet",
+    "fetch": "Search in API",
     "authors": "Authors",
     "publisher": "Publisher",
     "pages": "Pages",

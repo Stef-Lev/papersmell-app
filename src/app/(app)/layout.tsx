@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { auth } from "@/auth";
 import AppHeader from "@/components/app-header/app-header";
+import BottomNavigation from "@/components/app-header/bottom-navigation/bottom-navigation";
 import { getTheme } from "@/lib/get-theme";
 import RouteLoading from "@/components/route-loading/route-loading";
 
@@ -22,6 +23,10 @@ async function AuthenticatedLayout({ children }: Pick<LayoutProps<"/">, "childre
     <>
       <AppHeader theme={await getTheme()} />
       {children}
+      <BottomNavigation
+        userName={session.user.name}
+        userEmail={session.user.email}
+      />
     </>
   );
 }

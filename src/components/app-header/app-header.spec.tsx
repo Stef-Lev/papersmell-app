@@ -1,5 +1,4 @@
 import { screen, within } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import type { Session } from "next-auth";
 import { useSession } from "next-auth/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -107,25 +106,5 @@ describe("AppHeader", () => {
     expect(
       screen.getByRole("button", { name: t("preferences.darkMode") }),
     ).toHaveAttribute("aria-pressed", "true");
-  });
-
-  it("should open the mobile menu with the navigation and account controls", async () => {
-    const user = userEvent.setup();
-    signIn({ id: "user-1", name: "Jane Doe" });
-    await renderHeader();
-
-    await user.click(screen.getByRole("button", { name: t("nav.menu") }));
-
-    const dialog = await screen.findByRole("dialog", { name: t("nav.menu") });
-    expect(
-      within(dialog).getByRole("link", { name: t("nav.library") }),
-    ).toHaveAttribute("href", "/library");
-    expect(
-      within(dialog).getByRole("button", { name: t("preferences.darkMode") }),
-    ).toBeInTheDocument();
-    expect(within(dialog).getByRole("link", { name: "JD" })).toHaveAttribute(
-      "href",
-      "/profile",
-    );
   });
 });

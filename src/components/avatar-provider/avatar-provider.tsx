@@ -20,12 +20,12 @@ export function AvatarProvider({ children }: { children: React.ReactNode }) {
   const fetchAvatarData = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/profile/avatar");
-      if (res.ok) {
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        setAvatarUrl(url);
-      }
+      const res = await fetch("/api/profile/avatar", { cache: "no-store" });
+      const url = res.ok ? URL.createObjectURL(await res.blob()) : null;
+      setAvatarUrl((previous) => {
+        if (previous) URL.revokeObjectURL(previous);
+        return url;
+      });
     } catch (error) {
       console.error("Failed to fetch avatar:", error);
     } finally {
@@ -41,10 +41,7 @@ export function AvatarProvider({ children }: { children: React.ReactNode }) {
     }
   }, [session?.user?.id, hasFetched]);
 
-  const refreshAvatar = async () => {
-    setHasFetched(false);
-    await fetchAvatarData();
-  };
+  const refreshAvatar = fetchAvatarData;
 
   return (
     <AvatarContext.Provider value={{ avatarUrl, isLoading, refreshAvatar }}>

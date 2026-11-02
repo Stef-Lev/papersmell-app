@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { screen, waitFor, within } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AvatarProvider } from "@/components/avatar-provider/avatar-provider";
+import ToastProvider from "@/components/toast-provider/toast-provider";
 import { renderWithIntl, t } from "@/test/utils";
 import ProfilePage from "./profile-page";
 
@@ -89,9 +90,11 @@ function setup(initial?: Partial<Profile>) {
 
 async function renderProfile() {
   renderWithIntl(
-    <AvatarProvider>
-      <ProfilePage />
-    </AvatarProvider>,
+    <ToastProvider>
+      <AvatarProvider>
+        <ProfilePage />
+      </AvatarProvider>
+    </ToastProvider>,
   );
   return screen.findByRole("heading", {
     level: 1,
@@ -121,9 +124,11 @@ afterEach(() => {
 describe("ProfilePage", () => {
   it("should show a loading indicator while the profile is fetched", async () => {
     renderWithIntl(
-      <AvatarProvider>
-        <ProfilePage />
-      </AvatarProvider>,
+      <ToastProvider>
+        <AvatarProvider>
+          <ProfilePage />
+        </AvatarProvider>
+      </ToastProvider>,
     );
 
     expect(screen.getByRole("status")).toHaveAttribute("aria-busy", "true");
@@ -134,9 +139,11 @@ describe("ProfilePage", () => {
     api.state.failProfileLoad = true;
 
     renderWithIntl(
-      <AvatarProvider>
-        <ProfilePage />
-      </AvatarProvider>,
+      <ToastProvider>
+        <AvatarProvider>
+          <ProfilePage />
+        </AvatarProvider>
+      </ToastProvider>,
     );
 
     expect(
@@ -149,9 +156,11 @@ describe("ProfilePage", () => {
     api.state.networkDown = true;
 
     renderWithIntl(
-      <AvatarProvider>
-        <ProfilePage />
-      </AvatarProvider>,
+      <ToastProvider>
+        <AvatarProvider>
+          <ProfilePage />
+        </AvatarProvider>
+      </ToastProvider>,
     );
 
     expect(
@@ -223,7 +232,7 @@ describe("ProfilePage", () => {
         new File(["png"], "me.png", { type: "image/png" }),
       );
 
-      expect(await screen.findByRole("status")).toHaveTextContent(
+      expect(await screen.findByRole("alert")).toHaveTextContent(
         t("pages.profile.successAvatarUploaded"),
       );
       expect(
@@ -291,7 +300,7 @@ describe("ProfilePage", () => {
         screen.getByRole("button", { name: t("pages.profile.removeAvatar") }),
       );
 
-      expect(await screen.findByRole("status")).toHaveTextContent(
+      expect(await screen.findByRole("alert")).toHaveTextContent(
         t("pages.profile.successAvatarRemoved"),
       );
       expect(screen.queryByRole("img", { name: "Ada Lovelace" })).toBeNull();
@@ -344,7 +353,7 @@ describe("ProfilePage", () => {
         screen.getByRole("button", { name: t("pages.profile.saveChanges") }),
       );
 
-      expect(await screen.findByRole("status")).toHaveTextContent(
+      expect(await screen.findByRole("alert")).toHaveTextContent(
         t("pages.profile.successProfileUpdated"),
       );
       expect(api.state.profile.name).toBe("Ada King");
@@ -524,7 +533,7 @@ describe("ProfilePage", () => {
 
       await fillPasswordForm(user, PASSWORD, "new-password", "new-password");
 
-      expect(await screen.findByRole("status")).toHaveTextContent(
+      expect(await screen.findByRole("alert")).toHaveTextContent(
         t("pages.profile.successPasswordChanged"),
       );
       expect(api.state.password).toBe("new-password");
@@ -532,29 +541,6 @@ describe("ProfilePage", () => {
         screen.queryByLabelText(t("pages.profile.currentPassword")),
       ).not.toBeInTheDocument();
     });
-  });
-
-  it("should dismiss the feedback message after 5 seconds", async () => {
-    vi.useFakeTimers({ shouldAdvanceTime: true });
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-    await renderProfile();
-    const name = screen.getByRole("textbox", { name: t("pages.profile.name") });
-    await user.clear(name);
-    await user.type(name, " ");
-    await user.click(
-      screen.getByRole("button", { name: t("pages.profile.saveChanges") }),
-    );
-    expect(screen.getByRole("alert")).toHaveTextContent(
-      t("pages.profile.errorNameRequired"),
-    );
-
-    await vi.advanceTimersByTimeAsync(4900);
-    expect(screen.getByRole("alert")).toBeInTheDocument();
-
-    await vi.advanceTimersByTimeAsync(100);
-    await waitFor(() =>
-      expect(screen.queryByRole("alert")).not.toBeInTheDocument(),
-    );
   });
 
   it("should sign out and return to the login page", async () => {
