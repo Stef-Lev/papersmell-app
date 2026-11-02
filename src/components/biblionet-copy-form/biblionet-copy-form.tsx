@@ -118,9 +118,6 @@ export default function BiblionetCopyForm() {
               <dt>{t("categories")}</dt>
               <dd>{book.categories.join(", ") || "-"}</dd>
             </dl>
-            {book.description && (
-              <p className={styles.description}>{book.description}</p>
-            )}
             {preview.alreadyStored && (
               <p className={styles.stored}>{t("alreadyStored")}</p>
             )}
