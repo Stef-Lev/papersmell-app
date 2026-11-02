@@ -213,7 +213,7 @@
     "noSearchResults": "No books matched that search.",
     "scanBarcode": "Scan ISBN",
     "stopScan": "Stop scanning",
-    "scannerUnsupported": "Barcode scanning is not supported here. Enter the ISBN in the search field instead.",
+    "scannerUnsupported": "Barcode scanning is not supported here. Enter the ISBN manually instead.",
     "scannerError": "The camera could not be started. Check camera permission or enter the ISBN manually.",
     "addToShelf": "Add to shelf",
     "addToCollection": "Add to collection",

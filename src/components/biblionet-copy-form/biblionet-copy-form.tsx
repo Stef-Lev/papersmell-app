@@ -1,28 +1,29 @@
 "use client";
 
 import { useState } from "react";
-import { Database, Search } from "lucide-react";
+import { Database, ScanBarcode, Search } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { toast } from "react-toastify";
 import BookCover from "@/components/book-cover/book-cover";
 import Button from "@/components/button/button";
 import TextInput from "@/components/text-input/text-input";
 import { fetchJson, getErrorMessage } from "@/lib/fetch-json";
+import { useBarcodeScanner } from "@/components/book-library/catalog-search-panel/use-barcode-scanner";
 import styles from "./biblionet-copy-form.module.css";
 import type { BiblionetPreview } from "./biblionet-copy-form.types";
 
 export default function BiblionetCopyForm() {
   const t = useTranslations("biblionetCopy");
+  const libraryT = useTranslations("libraryWorkspace");
   const [isbn, setIsbn] = useState("");
   const [preview, setPreview] = useState<BiblionetPreview | null>(null);
   const [busy, setBusy] = useState(false);
 
-  async function fetchBook(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function fetchBook(isbnToFetch = isbn) {
     setBusy(true);
     setPreview(null);
     try {
-      const params = new URLSearchParams({ isbn });
+      const params = new URLSearchParams({ isbn: isbnToFetch });
       setPreview(
         await fetchJson<BiblionetPreview>(`/api/admin/biblionet?${params}`),
       );
@@ -32,6 +33,12 @@ export default function BiblionetCopyForm() {
       setBusy(false);
     }
   }
+
+  const { videoRef, scanRunning, startScanner, stopScanner } =
+    useBarcodeScanner(async (scannedIsbn) => {
+      setIsbn(scannedIsbn);
+      await fetchBook(scannedIsbn);
+    });
 
   async function saveBook() {
     if (!preview?.book.isbn) return;
@@ -54,7 +61,13 @@ export default function BiblionetCopyForm() {
 
   return (
     <section className={styles.section}>
-      <form className={styles.form} onSubmit={(event) => void fetchBook(event)}>
+      <form
+        className={styles.form}
+        onSubmit={(event) => {
+          event.preventDefault();
+          void fetchBook();
+        }}
+      >
         <TextInput
           label={t("isbn")}
           fieldClassName={styles.field}
@@ -67,7 +80,24 @@ export default function BiblionetCopyForm() {
           <Search aria-hidden="true" />
           {t("fetch")}
         </Button>
+        {scanRunning ? (
+          <Button variant="secondary" onClick={stopScanner}>
+            <ScanBarcode aria-hidden="true" />
+            {libraryT("stopScan")}
+          </Button>
+        ) : (
+          <Button variant="secondary" onClick={() => void startScanner()}>
+            <ScanBarcode aria-hidden="true" />
+            {libraryT("scanBarcode")}
+          </Button>
+        )}
       </form>
+      <video
+        ref={videoRef}
+        className={scanRunning ? styles.scannerVideo : styles.hidden}
+        muted
+        playsInline
+      />
       {book && (
         <article className={styles.preview}>
           <BookCover className={styles.cover} src={book.coverUrl} />

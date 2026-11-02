@@ -3,6 +3,16 @@
   gap: var(--space-5);
 }
 
+.scannerVideo {
+  inline-size: 100%;
+  max-inline-size: 25rem;
+  border-radius: var(--radius-md);
+}
+
+.hidden {
+  display: none;
+}
+
 .form {
   display: flex;
   flex-wrap: wrap;
