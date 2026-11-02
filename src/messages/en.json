@@ -277,5 +277,22 @@
     "changesSaved": "Changes saved.",
     "emptyLibrary": "Your library is empty.",
     "noBooksMatch": "No books match these filters."
+  },
+  "biblionetCopy": {
+    "title": "Copy a book to my database",
+    "intro": "Fetch a book from Biblionet by ISBN, check it, and save it to our own catalog.",
+    "isbn": "ISBN",
+    "fetch": "Fetch from Biblionet",
+    "authors": "Authors",
+    "publisher": "Publisher",
+    "pages": "Pages",
+    "published": "Published",
+    "categories": "Categories",
+    "alreadyStored": "This book is already in our database.",
+    "save": "Save to my database",
+    "update": "Update in my database",
+    "saved": "Book saved to your database.",
+    "updated": "Book updated in your database.",
+    "genericError": "Something went wrong."
   }
 }

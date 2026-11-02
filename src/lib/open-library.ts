@@ -2,11 +2,14 @@ import { cacheLife } from "next/cache";
 import { BookSource } from "@/lib/book-source";
 
 export type CatalogBook = {
-  source: BookSource.OpenLibrary;
+  source: BookSource.OpenLibrary | BookSource.Biblionet;
   externalId: string;
   isbn?: string;
   title: string;
+  subtitle?: string;
   authors: string[];
+  publisher?: string;
+  description?: string;
   pageCount: number;
   publishedDate?: string;
   categories: string[];
@@ -15,7 +18,7 @@ export type CatalogBook = {
 
 /** A book about to be added to a library: a catalog result or a manual entry. */
 export type NewBook = Omit<CatalogBook, "source" | "externalId"> & {
-  source: BookSource.OpenLibrary | BookSource.Manual;
+  source: CatalogBook["source"] | BookSource.Manual;
   externalId?: string;
 };
 
@@ -52,17 +55,24 @@ export async function searchOpenLibrary(query: string): Promise<CatalogBook[]> {
   return searchOpenLibraryCached(params.toString());
 }
 
+function fetchOpenLibrary(params: string) {
+  return fetch(`https://openlibrary.org/search.json?${params}`, {
+    headers: { "User-Agent": "PaperSmell/1.0 (book catalog search)" },
+    signal: AbortSignal.timeout(10000),
+  });
+}
+
 async function searchOpenLibraryCached(params: string): Promise<CatalogBook[]> {
   "use cache";
   cacheLife("hours");
 
-  const response = await fetch(
-    `https://openlibrary.org/search.json?${params}`,
-    {
-      headers: { "User-Agent": "PaperSmell/1.0 (book catalog search)" },
-      signal: AbortSignal.timeout(8000),
-    },
-  );
+  // Open Library is occasionally slow, so a timed-out request is retried once.
+  const response = await fetchOpenLibrary(params).catch((error: unknown) => {
+    if (error instanceof Error && error.name === "TimeoutError") {
+      return fetchOpenLibrary(params);
+    }
+    throw error;
+  });
   if (!response.ok) {
     throw new Error(
       `Open Library search failed with status ${response.status}`,

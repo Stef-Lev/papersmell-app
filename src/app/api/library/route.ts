@@ -13,6 +13,8 @@ import { connectDB } from "@/lib/mongodb";
 import type { NewBook } from "@/lib/open-library";
 import { Shelf, isShelf } from "@/lib/shelves";
 import { BookSource } from "@/lib/book-source";
+import { fetchBiblionetBook } from "@/lib/biblionet";
+import { storeCatalogBook } from "@/lib/biblionet-catalog";
 import Book from "@/models/Book";
 import Collection from "@/models/Collection";
 import UserBook from "@/models/UserBook";
@@ -22,6 +24,7 @@ function isNewBook(value: unknown): value is NewBook {
   const book = value as Record<string, unknown>;
   return (
     (book.source === BookSource.OpenLibrary ||
+      book.source === BookSource.Biblionet ||
       book.source === BookSource.Manual) &&
     typeof book.title === "string" &&
     book.title.trim().length > 0 &&
@@ -145,7 +148,30 @@ export async function POST(request: Request) {
     coverUrl: safeUrl(book.coverUrl),
   };
   let catalogBookId: mongoose.Types.ObjectId;
-  if (book.source === BookSource.OpenLibrary) {
+  if (book.source === BookSource.Biblionet) {
+    // Never trust client fields for Biblionet books: use our stored copy or fetch it.
+    if (typeof book.externalId !== "string" || !/^\d{1,20}$/.test(book.externalId)) {
+      return jsonError("The catalog result is invalid.", 400);
+    }
+    const filter = { source: BookSource.Biblionet, externalId: book.externalId };
+    let catalogBook = await Book.findOne(filter);
+    if (!catalogBook) {
+      let fetched;
+      try {
+        fetched = await fetchBiblionetBook({ titleId: book.externalId });
+      } catch (error) {
+        console.error("Biblionet lookup failed:", error);
+        return jsonError("Biblionet is unavailable. Please try again.", 502);
+      }
+      if (!fetched) return jsonError("The catalog result is invalid.", 400);
+      await storeCatalogBook(fetched);
+      catalogBook = await Book.findOne(filter);
+    }
+    if (!catalogBook) {
+      throw new Error("Biblionet book could not be saved.");
+    }
+    catalogBookId = catalogBook._id;
+  } else if (book.source === BookSource.OpenLibrary) {
     if (typeof book.externalId !== "string" || book.externalId.length > 100) {
       return jsonError("The catalog result is invalid.", 400);
     }

@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
-import { searchOpenLibrary } from "@/lib/open-library";
+import { isAdminSession } from "@/lib/admin";
+import { searchCatalog } from "@/lib/catalog-search";
 
 export async function GET(request: Request) {
   const session = await auth();
@@ -13,7 +14,9 @@ export async function GET(request: Request) {
   }
 
   try {
-    const results = await searchOpenLibrary(query);
+    const results = await searchCatalog(query, {
+      saveFound: await isAdminSession(),
+    });
 
     return Response.json({ results });
   } catch (error) {
