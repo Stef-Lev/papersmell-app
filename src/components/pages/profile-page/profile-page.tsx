@@ -34,13 +34,12 @@ export default function ProfilePage({
   const t = useTranslations("pages.profile");
   const tAdmin = useTranslations("biblionetCopy");
   const { data: session, update: updateSession } = useSession();
-  const { refreshAvatar } = useAvatar();
+  const { avatarUrl, refreshAvatar, clearAvatar } = useAvatar();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
   const [name, setName] = useState("");
   const [showPasswordForm, setShowPasswordForm] = useState(false);
@@ -62,9 +61,6 @@ export default function ProfilePage({
           if (!active) return;
           setProfile(data);
           setName(data.name);
-          setAvatarPreview(
-            data.hasAvatar ? `/api/profile/avatar?t=${Date.now()}` : null,
-          );
         } else {
           toast.error(t("errorFetchingProfile"));
         }
@@ -107,11 +103,11 @@ export default function ProfilePage({
       });
 
       if (res.ok) {
-        setAvatarPreview(URL.createObjectURL(file));
+        const data = (await res.json()) as { avatarVersion: string };
         if (profile) {
           setProfile({ ...profile, hasAvatar: true });
         }
-        await refreshAvatar();
+        refreshAvatar(data.avatarVersion);
         toast.success(t("successAvatarUploaded"));
       } else {
         const data = await res.json();
@@ -137,11 +133,10 @@ export default function ProfilePage({
       });
 
       if (res.ok) {
-        setAvatarPreview(null);
+        clearAvatar();
         if (profile) {
           setProfile({ ...profile, hasAvatar: false });
         }
-        await refreshAvatar();
         toast.success(t("successAvatarRemoved"));
       } else {
         toast.error(t("errorRemovingAvatar"));
@@ -245,10 +240,10 @@ export default function ProfilePage({
         <section className={styles.section}>
           <h2>{t("avatarSection")}</h2>
           <div className={styles.avatarContainer}>
-            {avatarPreview ? (
-              // Avatar is a blob/API URL, which next/image cannot optimize.
+            {avatarUrl ? (
+              // Avatar URLs are served directly by the authenticated route.
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={avatarPreview} alt={profile.name} className={styles.avatarImage} />
+              <img src={avatarUrl} alt={profile.name} className={styles.avatarImage} />
             ) : (
               <div className={styles.avatarPlaceholder}>{profile.name.charAt(0).toUpperCase()}</div>
             )}

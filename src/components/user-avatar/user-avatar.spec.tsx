@@ -1,26 +1,18 @@
 import { useState } from "react";
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { AvatarProvider } from "@/components/avatar-provider/avatar-provider";
 import { renderWithIntl } from "@/test/utils";
 import UserAvatar from "./user-avatar";
 import type { UserAvatarProps } from "./user-avatar.types";
 
-const session = vi.hoisted(() => ({
-  current: null as { user: { id: string } } | null,
-}));
-
-vi.mock("next-auth/react", () => ({
-  useSession: () => ({ data: session.current }),
-}));
-
-const AVATAR_URL = "blob:http://localhost/avatar";
-const originalCreateObjectURL = URL.createObjectURL;
-
-function renderAvatar(props: UserAvatarProps = {}) {
+function renderAvatar(
+  props: UserAvatarProps = {},
+  initialAvatarUrl: string | null = null,
+) {
   return renderWithIntl(
-    <AvatarProvider>
+    <AvatarProvider initialAvatarUrl={initialAvatarUrl}>
       <UserAvatar {...props} />
     </AvatarProvider>,
   );
@@ -37,10 +29,6 @@ function MenuHarness() {
 }
 
 describe("UserAvatar", () => {
-  afterEach(() => {
-    session.current = null;
-  });
-
   describe("without an uploaded avatar", () => {
     it("should link to the profile page with the user's initials", () => {
       renderAvatar({ userName: "Jane Doe" });
@@ -99,37 +87,23 @@ describe("UserAvatar", () => {
   });
 
   describe("with an uploaded avatar", () => {
-    beforeEach(() => {
-      session.current = { user: { id: "user-1" } };
-      vi.stubGlobal(
-        "fetch",
-        async (input: RequestInfo | URL) =>
-          String(input) === "/api/profile/avatar"
-            ? new Response(new Blob(["avatar"], { type: "image/png" }))
-            : new Response(null, { status: 404 }),
+    it("should show the seeded avatar image instead of the initials", () => {
+      renderAvatar(
+        { userName: "Jane Doe" },
+        "/api/profile/avatar?v=initial-version",
       );
-      URL.createObjectURL = () => AVATAR_URL;
-    });
 
-    afterEach(() => {
-      vi.unstubAllGlobals();
-      URL.createObjectURL = originalCreateObjectURL;
-    });
-
-    it("should show the avatar image instead of the initials", async () => {
-      renderAvatar({ userName: "Jane Doe" });
-
-      expect(await screen.findByRole("img", { name: "Jane Doe" })).toHaveAttribute(
+      expect(screen.getByRole("img", { name: "Jane Doe" })).toHaveAttribute(
         "src",
-        AVATAR_URL,
+        "/api/profile/avatar?v=initial-version",
       );
       expect(screen.getByRole("link", { name: "Jane Doe" })).not.toHaveTextContent("JD");
     });
 
-    it("should use a generic alt text without a name or email", async () => {
-      renderAvatar();
+    it("should use a generic alt text without a name or email", () => {
+      renderAvatar({}, "/api/profile/avatar?v=initial-version");
 
-      expect(await screen.findByRole("img", { name: "User avatar" })).toBeInTheDocument();
+      expect(screen.getByRole("img", { name: "User avatar" })).toBeInTheDocument();
     });
   });
 });

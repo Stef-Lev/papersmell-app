@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { randomUUID } from "node:crypto";
 import { auth } from "@/auth";
 import { connectDB } from "@/lib/mongodb";
 import User from "@/models/User";
@@ -44,10 +45,15 @@ export async function POST(req: Request) {
       data: Buffer.from(buffer),
       contentType: file.type,
     };
+    user.avatarVersion = randomUUID();
 
     await user.save();
 
-    return NextResponse.json({ success: true, message: "Avatar uploaded successfully" });
+    return NextResponse.json({
+      success: true,
+      message: "Avatar uploaded successfully",
+      avatarVersion: user.avatarVersion,
+    });
   } catch (error) {
     console.error("POST /api/profile/avatar error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
@@ -74,7 +80,7 @@ export async function GET() {
 
     const response = new NextResponse(buffer);
     response.headers.set("Content-Type", user.avatar.contentType || "image/png");
-    response.headers.set("Cache-Control", "public, max-age=3600");
+    response.headers.set("Cache-Control", "private, max-age=31536000, immutable");
 
     return response;
   } catch (error) {
@@ -98,6 +104,7 @@ export async function DELETE() {
     }
 
     user.avatar = undefined;
+    user.avatarVersion = randomUUID();
     await user.save();
 
     return NextResponse.json({ success: true, message: "Avatar deleted successfully" });

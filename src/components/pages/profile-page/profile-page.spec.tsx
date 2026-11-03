@@ -69,10 +69,14 @@ function createFakeApi(initial: Partial<Profile> = {}) {
       return json(state.profile);
     }
     if (url.startsWith("/api/profile/avatar")) {
-      if (method === "GET") return new Response(new Blob(["png"]));
+      if (method === "GET") {
+        return state.profile.hasAvatar
+          ? new Response(new Blob(["png"], { type: "image/png" }))
+          : json({ error: "Avatar not found" }, 404);
+      }
       if (state.failAvatar) return json({ error: "Storage unavailable" }, 500);
       state.profile.hasAvatar = method === "POST";
-      return json({ ok: true });
+      return json({ ok: true, avatarVersion: "updated-version" });
     }
     return json({ error: "Not found" }, 404);
   }
@@ -81,7 +85,6 @@ function createFakeApi(initial: Partial<Profile> = {}) {
 }
 
 let api: ReturnType<typeof createFakeApi>;
-const originalCreateObjectURL = URL.createObjectURL;
 
 function setup(initial?: Partial<Profile>) {
   api = createFakeApi(initial);
@@ -91,7 +94,13 @@ function setup(initial?: Partial<Profile>) {
 async function renderProfile() {
   renderWithIntl(
     <ToastProvider>
-      <AvatarProvider>
+      <AvatarProvider
+        initialAvatarUrl={
+          api.state.profile.hasAvatar
+            ? "/api/profile/avatar?v=initial-version"
+            : null
+        }
+      >
         <ProfilePage />
       </AvatarProvider>
     </ToastProvider>,
@@ -109,13 +118,11 @@ function getFileInput() {
 
 beforeEach(() => {
   setup();
-  URL.createObjectURL = () => "blob:avatar-preview";
   vi.stubGlobal("confirm", () => true);
 });
 
 afterEach(() => {
   vi.useRealTimers();
-  URL.createObjectURL = originalCreateObjectURL;
   vi.unstubAllGlobals();
   auth.update.mockClear();
   auth.signOut.mockClear();
@@ -217,7 +224,7 @@ describe("ProfilePage", () => {
 
       expect(
         await screen.findByRole("img", { name: "Ada Lovelace" }),
-      ).toHaveAttribute("src", expect.stringMatching(/^\/api\/profile\/avatar\?t=\d+$/));
+      ).toHaveAttribute("src", "/api/profile/avatar?v=initial-version");
       expect(
         screen.getByRole("button", { name: t("pages.profile.removeAvatar") }),
       ).toBeInTheDocument();
@@ -237,7 +244,7 @@ describe("ProfilePage", () => {
       );
       expect(
         screen.getByRole("img", { name: "Ada Lovelace" }),
-      ).toBeInTheDocument();
+      ).toHaveAttribute("src", "/api/profile/avatar?v=updated-version");
       expect(screen.queryByText("A")).not.toBeInTheDocument();
       expect(
         screen.getByRole("button", { name: t("pages.profile.removeAvatar") }),

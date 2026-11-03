@@ -1,50 +1,31 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
+import { createContext, useContext, useState } from "react";
 
 type AvatarContextType = {
   avatarUrl: string | null;
-  isLoading: boolean;
-  refreshAvatar: () => Promise<void>;
+  refreshAvatar: (version: string) => void;
+  clearAvatar: () => void;
 };
 
 const AvatarContext = createContext<AvatarContextType | undefined>(undefined);
 
-export function AvatarProvider({ children }: { children: React.ReactNode }) {
-  const { data: session } = useSession();
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [hasFetched, setHasFetched] = useState(false);
+export function AvatarProvider({
+  children,
+  initialAvatarUrl = null,
+}: {
+  children: React.ReactNode;
+  initialAvatarUrl?: string | null;
+}) {
+  const [avatarUrl, setAvatarUrl] = useState(initialAvatarUrl);
 
-  const fetchAvatarData = async () => {
-    setIsLoading(true);
-    try {
-      const res = await fetch("/api/profile/avatar", { cache: "no-store" });
-      const url = res.ok ? URL.createObjectURL(await res.blob()) : null;
-      setAvatarUrl((previous) => {
-        if (previous) URL.revokeObjectURL(previous);
-        return url;
-      });
-    } catch (error) {
-      console.error("Failed to fetch avatar:", error);
-    } finally {
-      setIsLoading(false);
-      setHasFetched(true);
-    }
+  const refreshAvatar = (version: string) => {
+    setAvatarUrl(`/api/profile/avatar?v=${encodeURIComponent(version)}`);
   };
-
-  useEffect(() => {
-    if (session?.user?.id && !hasFetched) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      fetchAvatarData();
-    }
-  }, [session?.user?.id, hasFetched]);
-
-  const refreshAvatar = fetchAvatarData;
+  const clearAvatar = () => setAvatarUrl(null);
 
   return (
-    <AvatarContext.Provider value={{ avatarUrl, isLoading, refreshAvatar }}>
+    <AvatarContext.Provider value={{ avatarUrl, refreshAvatar, clearAvatar }}>
       {children}
     </AvatarContext.Provider>
   );
