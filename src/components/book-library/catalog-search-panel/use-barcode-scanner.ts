@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { toast } from "react-toastify";
 import { getErrorMessage } from "@/lib/fetch-json";
+import { toIsbn13 } from "@/lib/isbn";
 
 type BarcodeDetectorInstance = {
   detect: (source: HTMLVideoElement) => Promise<{ rawValue: string }[]>;
@@ -9,6 +10,33 @@ type BarcodeDetectorInstance = {
 type BarcodeDetectorConstructor = new (options: {
   formats: string[];
 }) => BarcodeDetectorInstance;
+
+/** Reads barcodes with ZXing for browsers without BarcodeDetector (e.g. Safari). */
+async function createZxingDetector(): Promise<BarcodeDetectorInstance> {
+  const [{ BrowserMultiFormatReader }, { BarcodeFormat, DecodeHintType }] =
+    await Promise.all([import("@zxing/browser"), import("@zxing/library")]);
+  const hints = new Map([
+    [
+      DecodeHintType.POSSIBLE_FORMATS,
+      [BarcodeFormat.EAN_13, BarcodeFormat.EAN_8, BarcodeFormat.UPC_A],
+    ],
+  ]);
+  const reader = new BrowserMultiFormatReader(hints);
+  const canvas = document.createElement("canvas");
+  return {
+    async detect(video) {
+      if (!video.videoWidth) return [];
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext("2d")?.drawImage(video, 0, 0);
+      try {
+        return [{ rawValue: reader.decodeFromCanvas(canvas).getText() }];
+      } catch {
+        return []; // no barcode in this frame
+      }
+    },
+  };
+}
 
 export function useBarcodeScanner(onDetected: (isbn: string) => Promise<void>) {
   const t = useTranslations("libraryWorkspace");
@@ -27,13 +55,13 @@ export function useBarcodeScanner(onDetected: (isbn: string) => Promise<void>) {
   useEffect(() => stopScanner, [stopScanner]);
 
   async function startScanner() {
-    const detectorClass = (
-      window as Window & { BarcodeDetector?: BarcodeDetectorConstructor }
-    ).BarcodeDetector;
-    if (!detectorClass || !navigator.mediaDevices?.getUserMedia) {
+    if (!navigator.mediaDevices?.getUserMedia) {
       toast.error(t("scannerUnsupported"));
       return;
     }
+    const detectorClass = (
+      window as Window & { BarcodeDetector?: BarcodeDetectorConstructor }
+    ).BarcodeDetector;
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -46,12 +74,15 @@ export function useBarcodeScanner(onDetected: (isbn: string) => Promise<void>) {
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
       }
-      const detector = new detectorClass({
-        formats: ["ean_13", "ean_8", "upc_a", "upc_e"],
-      });
+      const detector = detectorClass
+        ? new detectorClass({ formats: ["ean_13", "ean_8", "upc_a", "upc_e"] })
+        : await createZxingDetector();
       while (!scanCancelled.current && videoRef.current) {
         const detected = await detector.detect(videoRef.current);
-        const isbn = detected[0]?.rawValue;
+        // Skip price tags and other non-book codes instead of stopping on them.
+        const isbn = detected
+          .map(({ rawValue }) => toIsbn13(rawValue))
+          .find((value) => value && /^97[89]/.test(value));
         if (isbn) {
           stopScanner();
           await onDetected(isbn);

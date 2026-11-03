@@ -1,5 +1,6 @@
 import { cacheLife } from "next/cache";
 import { BookSource } from "@/lib/book-source";
+import { toIsbn13 } from "@/lib/isbn";
 
 export type CatalogBook = {
   source: BookSource.OpenLibrary | BookSource.Biblionet;
@@ -49,7 +50,8 @@ export async function searchOpenLibrary(query: string): Promise<CatalogBook[]> {
   if (/^(?:\d{9}[\dX]|\d{13})$/.test(normalizedIsbn)) {
     params.set("isbn", normalizedIsbn);
   } else {
-    params.set("q", normalizedQuery);
+    // Lowercased so differently-cased searches share one cache entry.
+    params.set("q", normalizedQuery.toLowerCase());
   }
 
   return searchOpenLibraryCached(params.toString());
@@ -87,7 +89,9 @@ async function searchOpenLibraryCached(params: string): Promise<CatalogBook[]> {
       {
         source: BookSource.OpenLibrary,
         externalId: doc.key,
-        isbn: searchedIsbn ?? doc.isbn?.[0],
+        isbn:
+          searchedIsbn ??
+          (doc.isbn?.[0] ? (toIsbn13(doc.isbn[0]) ?? doc.isbn[0]) : undefined),
         title: doc.title,
         authors: doc.author_name ?? [],
         pageCount: doc.number_of_pages_median ?? 0,

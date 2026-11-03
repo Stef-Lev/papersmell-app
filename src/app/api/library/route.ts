@@ -14,6 +14,7 @@ import type { NewBook } from "@/lib/open-library";
 import { Shelf, isShelf } from "@/lib/shelves";
 import { BookSource } from "@/lib/book-source";
 import { fetchBiblionetBook } from "@/lib/biblionet";
+import { toGreekIsbn13, toIsbn13 } from "@/lib/isbn";
 import { storeCatalogBook } from "@/lib/biblionet-catalog";
 import Book from "@/models/Book";
 import Collection from "@/models/Collection";
@@ -139,7 +140,7 @@ export async function POST(request: Request) {
 
   // isNewBook has already validated these fields' types
   const bookFields = {
-    isbn: book.isbn?.slice(0, 32),
+    isbn: (book.isbn && toIsbn13(book.isbn)) || book.isbn?.slice(0, 32),
     title: book.title.trim(),
     authors: book.authors ?? [],
     pageCount: book.pageCount ?? 0,
@@ -158,7 +159,13 @@ export async function POST(request: Request) {
     if (!catalogBook) {
       let fetched;
       try {
-        fetched = await fetchBiblionetBook({ titleId: book.externalId });
+        // Looking up by ISBN first reuses the search's cached Biblionet response.
+        const greekIsbn = book.isbn ? toGreekIsbn13(book.isbn) : null;
+        if (greekIsbn) {
+          fetched = await fetchBiblionetBook({ isbn: greekIsbn });
+          if (fetched?.externalId !== book.externalId) fetched = null;
+        }
+        fetched ??= await fetchBiblionetBook({ titleId: book.externalId });
       } catch (error) {
         console.error("Biblionet lookup failed:", error);
         return jsonError("Biblionet is unavailable. Please try again.", 502);
@@ -180,6 +187,17 @@ export async function POST(request: Request) {
       externalId: book.externalId,
     };
     let catalogBook = await Book.findOne(filter);
+    if (!catalogBook) {
+      // The same edition may already be saved from another source; reuse it.
+      const isbn13 = bookFields.isbn ? toIsbn13(bookFields.isbn) : null;
+      if (isbn13) {
+        catalogBook = await Book.findOne({
+          source: { $in: [BookSource.Biblionet, BookSource.OpenLibrary] },
+          externalId: { $type: "string" },
+          isbn: isbn13,
+        });
+      }
+    }
     if (!catalogBook) {
       try {
         catalogBook = await Book.create({ ...filter, ...bookFields });

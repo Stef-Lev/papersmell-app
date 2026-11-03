@@ -1,6 +1,5 @@
 import "server-only";
-import { after } from "next/server";
-import { storeCatalogBook } from "@/lib/biblionet-catalog";
+import { BookSource } from "@/lib/book-source";
 import { fetchBiblionetBook } from "@/lib/biblionet";
 import { toGreekIsbn13, toIsbn13 } from "@/lib/isbn";
 import {
@@ -29,56 +28,58 @@ function dedupe(books: CatalogBook[]) {
   });
 }
 
-/** Saves books to our catalog after the response is sent, so searching stays fast. */
-function saveInBackground(books: CatalogBook[]) {
-  after(async () => {
-    for (const book of books) {
-      await storeCatalogBook(book).catch((error: unknown) =>
-        console.error("Saving catalog book failed:", error),
-      );
-    }
-  });
-}
+// Open Library is only queried for text when our catalog has fewer matches than this.
+const MIN_LOCAL_TEXT_RESULTS = 5;
 
 /**
- * Our own catalog is searched first. An ISBN found there is returned alone;
- * otherwise a Greek ISBN is looked up in Biblionet, and everything else falls
- * back to Open Library. Text searches show our matches first. With
- * `saveFound` (admins only), books found by ISBN in an external source are
- * saved to our catalog.
+ * Searches never save anything: a book is added to our catalog only when a
+ * user adds it to their library.
+ *
+ * - Greek ISBN: our catalog, then Biblionet. Open Library is never used, so
+ *   an unknown Greek ISBN is simply not found. Biblionet failures are thrown
+ *   rather than reported as "not found".
+ * - Other ISBN: our catalog, then Open Library.
+ * - Title or author: our catalog first; Open Library only tops up when we have
+ *   few matches, and its failure is tolerated when we already have results.
  */
-export async function searchCatalog(
-  query: string,
-  { saveFound = false }: { saveFound?: boolean } = {},
-): Promise<CatalogBook[]> {
-  if (toIsbn13(query)) {
+export async function searchCatalog(query: string): Promise<CatalogBook[]> {
+  const isbn13 = toIsbn13(query);
+  if (isbn13) {
     const stored = await safely(
       "Local ISBN lookup",
-      () => findStoredBooksByIsbn(query),
+      () => findStoredBooksByIsbn(isbn13),
       [],
     );
-    if (stored.length) return stored;
 
-    const greekIsbn = toGreekIsbn13(query);
-    if (greekIsbn) {
-      const fetched = await safely(
-        "Biblionet lookup",
-        () => fetchBiblionetBook({ isbn: greekIsbn }),
-        null,
+    if (toGreekIsbn13(isbn13)) {
+      // A stored Open Library copy must not hide the richer Biblionet record.
+      const storedBiblionet = stored.filter(
+        (book) => book.source === BookSource.Biblionet,
       );
-      if (fetched) {
-        if (saveFound) saveInBackground([fetched]);
-        return [fetched];
-      }
+      if (storedBiblionet.length) return storedBiblionet;
+      const fetched = stored.length
+        ? await safely(
+            "Biblionet lookup",
+            () => fetchBiblionetBook({ isbn: isbn13 }),
+            null,
+          )
+        : await fetchBiblionetBook({ isbn: isbn13 });
+      return fetched ? [fetched] : stored;
     }
-    const found = await searchOpenLibrary(query);
-    if (saveFound) saveInBackground(found);
-    return found;
+
+    if (stored.length) return stored;
+    return searchOpenLibrary(isbn13);
   }
 
-  const [stored, external] = await Promise.all([
-    safely("Local text search", () => findStoredBooksByText(query), []),
-    searchOpenLibrary(query),
-  ]);
+  const stored = await safely(
+    "Local text search",
+    () => findStoredBooksByText(query),
+    [],
+  );
+  if (stored.length >= MIN_LOCAL_TEXT_RESULTS) return stored;
+
+  const external = stored.length
+    ? await safely("Open Library search", () => searchOpenLibrary(query), [])
+    : await searchOpenLibrary(query);
   return dedupe([...stored, ...external]);
 }

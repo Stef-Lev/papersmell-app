@@ -13,6 +13,8 @@
   "dependencies": {
     "@ark-ui/react": "^5.39.3",
     "@radix-ui/react-select": "^2.4.1",
+    "@zxing/browser": "^0.2.1",
+    "@zxing/library": "^0.23.0",
     "bcryptjs": "^3.0.3",
     "date-fns": "^4.4.0",
     "lucide-react": "^1.59.0",

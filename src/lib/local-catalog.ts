@@ -1,7 +1,8 @@
 import "server-only";
+import { toAccentInsensitivePattern } from "@/lib/accent-pattern";
 import { BookSource } from "@/lib/book-source";
 import { toCatalogBook } from "@/lib/biblionet-catalog";
-import { cleanIsbn, toIsbn13 } from "@/lib/isbn";
+import { cleanIsbn, toIsbn10, toIsbn13 } from "@/lib/isbn";
 import { connectDB } from "@/lib/mongodb";
 import type { CatalogBook } from "@/lib/open-library";
 import Book from "@/models/Book";
@@ -9,17 +10,14 @@ import Book from "@/models/Book";
 // Manual books are private to their creator, so they are never shared in search.
 const SHARED_SOURCES = [BookSource.Biblionet, BookSource.OpenLibrary];
 
-function escapeRegExp(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
 /** Shared catalog books matching an ISBN (any common format). */
 export async function findStoredBooksByIsbn(
   isbn: string,
 ): Promise<CatalogBook[]> {
-  const isbns = [...new Set([cleanIsbn(isbn), toIsbn13(isbn)])].filter(
-    (value): value is string => Boolean(value),
-  );
+  const isbn13 = toIsbn13(isbn);
+  const isbns = [
+    ...new Set([cleanIsbn(isbn), isbn13, isbn13 && toIsbn10(isbn13)]),
+  ].filter((value): value is string => Boolean(value));
   await connectDB();
   const docs = await Book.find({
     source: { $in: SHARED_SOURCES },
@@ -35,7 +33,7 @@ export async function findStoredBooksByIsbn(
 export async function findStoredBooksByText(
   query: string,
 ): Promise<CatalogBook[]> {
-  const pattern = new RegExp(escapeRegExp(query), "i");
+  const pattern = new RegExp(toAccentInsensitivePattern(query), "i");
   await connectDB();
   const docs = await Book.find({
     source: { $in: SHARED_SOURCES },

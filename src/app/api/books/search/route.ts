@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
-import { isAdminSession } from "@/lib/admin";
 import { searchCatalog } from "@/lib/catalog-search";
+import { looksLikeIsbn, toIsbn13 } from "@/lib/isbn";
 
 export async function GET(request: Request) {
   const session = await auth();
@@ -12,11 +12,15 @@ export async function GET(request: Request) {
   if (query.length < 2 || query.length > 120) {
     return Response.json({ error: "Enter at least 2 characters to search." }, { status: 400 });
   }
+  if (looksLikeIsbn(query) && !toIsbn13(query)) {
+    return Response.json(
+      { error: "That ISBN is not valid. Check the number and try again." },
+      { status: 400 },
+    );
+  }
 
   try {
-    const results = await searchCatalog(query, {
-      saveFound: await isAdminSession(),
-    });
+    const results = await searchCatalog(query);
 
     return Response.json({ results });
   } catch (error) {

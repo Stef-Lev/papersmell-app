@@ -212,7 +212,7 @@
     "inLibrary": "In your library",
     "search": "Search",
     "searching": "Searching...",
-    "noSearchResults": "No books matched that search.",
+    "noSearchResults": "No books matched that search. You can add it manually below.",
     "scanBarcode": "Scan ISBN",
     "stopScan": "Stop scanning",
     "scannerUnsupported": "Barcode scanning is not supported here. Enter the ISBN manually instead.",
