@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  biblionetPersonName,
   extractBiblionetTitle,
   normalizeBiblionetTitle,
 } from "./biblionet-normalize";
@@ -38,6 +39,25 @@ describe("normalizeBiblionetTitle", () => {
 
   it("should return null without an id or title", () => {
     expect(normalizeBiblionetTitle({ TitlesID: "1", Title: "" })).toBeNull();
+  });
+});
+
+describe("biblionetPersonName", () => {
+  it("should join the name parts of a person", () => {
+    expect(
+      biblionetPersonName({ Name: "Amir", MiddleName: "", Surname: "Levine" }),
+    ).toBe("Amir Levine");
+  });
+
+  it("should use a pen name stored only in the surname", () => {
+    expect(
+      biblionetPersonName({ Name: "", Surname: "Φυστίκι ΠουΚυλάει" }),
+    ).toBe("Φυστίκι ΠουΚυλάει");
+  });
+
+  it("should return undefined without a person or name", () => {
+    expect(biblionetPersonName(null)).toBeUndefined();
+    expect(biblionetPersonName({ Name: " ", Surname: "" })).toBeUndefined();
   });
 });
 

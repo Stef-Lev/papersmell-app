@@ -81,6 +81,11 @@ export async function GET() {
     entries: entries.map((entry) => {
       const book = entry.bookId as unknown as Record<string, unknown>;
       const overrides = (entry as unknown as Record<string, unknown>).bookOverrides as Record<string, unknown> | undefined;
+      // Mongoose stores an empty authors array when nothing was overridden; it must not hide the book's authors.
+      const authorOverride =
+        Array.isArray(overrides?.authors) && overrides.authors.length
+          ? overrides.authors
+          : undefined;
       return {
         id: entry._id.toString(),
         status: entry.status,
@@ -95,14 +100,14 @@ export async function GET() {
           source: book.source,
           externalId: book.externalId,
           title: overrides?.title || book.title,
-          authors: overrides?.authors || book.authors,
+          authors: authorOverride || book.authors,
           isbn: overrides?.isbn || book.isbn,
           pageCount: overrides?.pageCount ?? book.pageCount,
           categories: book.categories,
           coverUrl: overrides?.coverUrl || book.coverUrl,
           publishedDate: book.publishedDate,
         },
-        bookOverrides: overrides || {},
+        bookOverrides: overrides ? { ...overrides, authors: authorOverride } : {},
       };
     }),
     collections: collections.map(toCollectionJson),

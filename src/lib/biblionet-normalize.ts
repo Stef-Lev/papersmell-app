@@ -37,6 +37,15 @@ export function extractBiblionetTitle(payload: unknown): BiblionetTitle | null {
   return null;
 }
 
+/** The full name from a Biblionet get_person record, or undefined when it has none. */
+export function biblionetPersonName(person: BiblionetTitle | null) {
+  const name = [person?.Name, person?.MiddleName, person?.Surname]
+    .map((part) => part?.trim())
+    .filter(Boolean)
+    .join(" ");
+  return text(name, 200);
+}
+
 /** Maps a raw Biblionet title to the shape stored in our Book catalog. */
 export function normalizeBiblionetTitle(
   raw: BiblionetTitle,

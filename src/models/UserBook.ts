@@ -34,7 +34,7 @@ const userBookSchema = new mongoose.Schema(
     tags: [{ type: String, trim: true }],
     bookOverrides: {
       title: { type: String, trim: true },
-      authors: [{ type: String, trim: true }],
+      authors: { type: [{ type: String, trim: true }], default: undefined },
       isbn: { type: String, trim: true },
       pageCount: { type: Number, min: 0 },
       coverUrl: { type: String },
