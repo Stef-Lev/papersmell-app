@@ -38,6 +38,7 @@ export default function UserAvatar({
           className={styles.image}
           width={48}
           height={48}
+          loading="eager"
           unoptimized
         />
       ) : (

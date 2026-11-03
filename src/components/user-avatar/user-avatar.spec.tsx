@@ -97,6 +97,10 @@ describe("UserAvatar", () => {
         "src",
         "/api/profile/avatar?v=initial-version",
       );
+      expect(screen.getByRole("img", { name: "Jane Doe" })).toHaveAttribute(
+        "loading",
+        "eager",
+      );
       expect(screen.getByRole("link", { name: "Jane Doe" })).not.toHaveTextContent("JD");
     });
 
