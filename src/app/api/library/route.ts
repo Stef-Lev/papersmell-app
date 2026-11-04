@@ -10,62 +10,15 @@ import {
 } from "@/lib/api";
 import { toDateOnly } from "@/lib/dates";
 import { connectDB } from "@/lib/mongodb";
-import type { NewBook } from "@/lib/open-library";
 import { Shelf, isShelf } from "@/lib/shelves";
-import { BookSource } from "@/lib/book-source";
+import { BookSource, SHARED_BOOK_SOURCES } from "@/lib/book-source";
 import { fetchBiblionetBook } from "@/lib/biblionet";
 import { toGreekIsbn13, toIsbn13 } from "@/lib/isbn";
+import { isNewBook, safeUrl, toBookFields } from "@/lib/book-input";
 import { storeCatalogBook } from "@/lib/biblionet-catalog";
 import Book from "@/models/Book";
 import Collection from "@/models/Collection";
 import UserBook from "@/models/UserBook";
-
-function isNewBook(value: unknown): value is NewBook {
-  if (!value || typeof value !== "object") return false;
-  const book = value as Record<string, unknown>;
-  return (
-    (book.source === BookSource.OpenLibrary ||
-      book.source === BookSource.Biblionet ||
-      book.source === BookSource.Manual) &&
-    typeof book.title === "string" &&
-    book.title.trim().length > 0 &&
-    book.title.length <= 300 &&
-    (book.authors === undefined ||
-      (Array.isArray(book.authors) &&
-        book.authors.length <= 20 &&
-        book.authors.every(
-          (author) => typeof author === "string" && author.length <= 200,
-        ))) &&
-    (book.categories === undefined ||
-      (Array.isArray(book.categories) &&
-        book.categories.length <= 20 &&
-        book.categories.every(
-          (category) => typeof category === "string" && category.length <= 100,
-        ))) &&
-    (book.pageCount === undefined ||
-      (typeof book.pageCount === "number" &&
-        Number.isInteger(book.pageCount) &&
-        book.pageCount >= 0)) &&
-    (book.isbn === undefined || typeof book.isbn === "string") &&
-    (book.externalId === undefined || typeof book.externalId === "string") &&
-    (book.publishedDate === undefined ||
-      (typeof book.publishedDate === "string" &&
-        book.publishedDate.length <= 40)) &&
-    (book.coverUrl === undefined || typeof book.coverUrl === "string")
-  );
-}
-
-function safeUrl(value: unknown) {
-  if (typeof value !== "string" || value.length > 2048) return undefined;
-  try {
-    const url = new URL(value);
-    return url.protocol === "https:" || url.protocol === "http:"
-      ? url.toString()
-      : undefined;
-  } catch {
-    return undefined;
-  }
-}
 
 export async function GET() {
   const userId = await getSessionUserId();
@@ -144,15 +97,7 @@ export async function POST(request: Request) {
   }
 
   // isNewBook has already validated these fields' types
-  const bookFields = {
-    isbn: (book.isbn && toIsbn13(book.isbn)) || book.isbn?.slice(0, 32),
-    title: book.title.trim(),
-    authors: book.authors ?? [],
-    pageCount: book.pageCount ?? 0,
-    publishedDate: book.publishedDate,
-    categories: book.categories ?? [],
-    coverUrl: safeUrl(book.coverUrl),
-  };
+  const bookFields = toBookFields(book);
   let catalogBookId: mongoose.Types.ObjectId;
   if (book.source === BookSource.Biblionet) {
     // Never trust client fields for Biblionet books: use our stored copy or fetch it.
@@ -197,7 +142,7 @@ export async function POST(request: Request) {
       const isbn13 = bookFields.isbn ? toIsbn13(bookFields.isbn) : null;
       if (isbn13) {
         catalogBook = await Book.findOne({
-          source: { $in: [BookSource.Biblionet, BookSource.OpenLibrary] },
+          source: { $in: SHARED_BOOK_SOURCES },
           externalId: { $type: "string" },
           isbn: isbn13,
         });
@@ -214,6 +159,20 @@ export async function POST(request: Request) {
     if (!catalogBook) {
       throw new Error("Open Library book could not be saved.");
     }
+    catalogBookId = catalogBook._id;
+  } else if (book.source === BookSource.PaperSmell) {
+    // Admin-added catalog books only exist in our database: never create them here.
+    if (
+      typeof book.externalId !== "string" ||
+      !mongoose.Types.ObjectId.isValid(book.externalId)
+    ) {
+      return jsonError("The catalog result is invalid.", 400);
+    }
+    const catalogBook = await Book.findOne({
+      source: BookSource.PaperSmell,
+      externalId: book.externalId,
+    });
+    if (!catalogBook) return jsonError("The catalog result is invalid.", 400);
     catalogBookId = catalogBook._id;
   } else {
     const catalogBook = await Book.create({

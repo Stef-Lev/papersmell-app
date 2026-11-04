@@ -102,6 +102,14 @@ describe("searchCatalog", () => {
       expect(await searchCatalog(GREEK_ISBN)).toEqual([biblionetBook]);
     });
 
+    it("should return a book an admin added by hand without asking Biblionet", async () => {
+      const curated = book(BookSource.PaperSmell, "abc", { isbn: GREEK_ISBN });
+      catalog.stored = [curated];
+      catalog.biblionet = biblionetBook;
+
+      expect(await searchCatalog(GREEK_ISBN)).toEqual([curated]);
+    });
+
     it("should fall back to a stored Open Library copy when Biblionet lacks it", async () => {
       const stored = openLibraryBook("OL1", { isbn: GREEK_ISBN });
       catalog.stored = [stored];

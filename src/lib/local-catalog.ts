@@ -1,14 +1,11 @@
 import "server-only";
 import { toAccentInsensitivePattern } from "@/lib/accent-pattern";
-import { BookSource } from "@/lib/book-source";
+import { SHARED_BOOK_SOURCES } from "@/lib/book-source";
 import { toCatalogBook } from "@/lib/biblionet-catalog";
 import { cleanIsbn, toIsbn10, toIsbn13 } from "@/lib/isbn";
 import { connectDB } from "@/lib/mongodb";
 import type { CatalogBook } from "@/lib/open-library";
 import Book from "@/models/Book";
-
-// Manual books are private to their creator, so they are never shared in search.
-const SHARED_SOURCES = [BookSource.Biblionet, BookSource.OpenLibrary];
 
 /** Shared catalog books matching an ISBN (any common format). */
 export async function findStoredBooksByIsbn(
@@ -20,7 +17,7 @@ export async function findStoredBooksByIsbn(
   ].filter((value): value is string => Boolean(value));
   await connectDB();
   const docs = await Book.find({
-    source: { $in: SHARED_SOURCES },
+    source: { $in: SHARED_BOOK_SOURCES },
     externalId: { $type: "string" },
     isbn: { $in: isbns },
   })
@@ -36,7 +33,7 @@ export async function findStoredBooksByText(
   const pattern = new RegExp(toAccentInsensitivePattern(query), "i");
   await connectDB();
   const docs = await Book.find({
-    source: { $in: SHARED_SOURCES },
+    source: { $in: SHARED_BOOK_SOURCES },
     externalId: { $type: "string" },
     $or: [{ title: pattern }, { authors: pattern }],
   })

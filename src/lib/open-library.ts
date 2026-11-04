@@ -3,7 +3,7 @@ import { BookSource } from "@/lib/book-source";
 import { toIsbn13 } from "@/lib/isbn";
 
 export type CatalogBook = {
-  source: BookSource.OpenLibrary | BookSource.Biblionet;
+  source: BookSource.OpenLibrary | BookSource.Biblionet | BookSource.PaperSmell;
   externalId: string;
   isbn?: string;
   title: string;

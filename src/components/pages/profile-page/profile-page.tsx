@@ -33,6 +33,7 @@ export default function ProfilePage({
 }: ProfilePageProps) {
   const t = useTranslations("pages.profile");
   const tAdmin = useTranslations("biblionetCopy");
+  const tCatalogAdd = useTranslations("catalogBookAdd");
   const { data: session, update: updateSession } = useSession();
   const { avatarUrl, refreshAvatar, clearAvatar } = useAvatar();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -285,6 +286,9 @@ export default function ProfilePage({
           <section className={styles.section}>
             <Link href="/copy-to-my-database" className={styles.adminLink}>
               {tAdmin("title")}
+            </Link>
+            <Link href="/add-to-my-database" className={styles.adminLink}>
+              {tCatalogAdd("title")}
             </Link>
           </section>
         )}

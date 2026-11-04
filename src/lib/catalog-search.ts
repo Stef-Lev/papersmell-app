@@ -52,11 +52,14 @@ export async function searchCatalog(query: string): Promise<CatalogBook[]> {
     );
 
     if (toGreekIsbn13(isbn13)) {
-      // A stored Open Library copy must not hide the richer Biblionet record.
-      const storedBiblionet = stored.filter(
-        (book) => book.source === BookSource.Biblionet,
+      // A stored Open Library copy must not hide the richer Biblionet record,
+      // but a book an admin added by hand is used as-is.
+      const preferred = stored.filter(
+        (book) =>
+          book.source === BookSource.Biblionet ||
+          book.source === BookSource.PaperSmell,
       );
-      if (storedBiblionet.length) return storedBiblionet;
+      if (preferred.length) return preferred;
       const fetched = stored.length
         ? await safely(
             "Biblionet lookup",

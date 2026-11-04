@@ -296,5 +296,12 @@
     "saved": "Book saved to your database.",
     "updated": "Book updated in your database.",
     "genericError": "Something went wrong."
+  },
+  "catalogBookAdd": {
+    "title": "Add a book to my database",
+    "intro": "Enter a book by hand and save it to our own catalog, so every user can find it in search.",
+    "save": "Save to my database",
+    "saved": "Book saved to your database.",
+    "genericError": "Something went wrong."
   }
 }

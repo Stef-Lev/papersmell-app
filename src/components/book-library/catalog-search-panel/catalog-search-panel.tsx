@@ -7,8 +7,10 @@ import { toast } from "react-toastify";
 import BookCover from "@/components/book-cover/book-cover";
 import Button from "@/components/button/button";
 import Dropdown from "@/components/dropdown/dropdown";
+import ManualBookForm from "@/components/manual-book-form/manual-book-form";
 import TextInput from "@/components/text-input/text-input";
 import { normalizeIsbn } from "@/components/book-library/filter-utils";
+import type { BookInput } from "@/lib/book-input";
 import { toCollectionOptions } from "@/lib/collections";
 import { BookSource } from "@/lib/book-source";
 import { fetchJson, getErrorMessage } from "@/lib/fetch-json";
@@ -121,24 +123,8 @@ export default function CatalogSearchPanel({
     }
   }
 
-  async function createManualBook(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const formElement = event.currentTarget;
-    const form = new FormData(formElement);
-    const author = String(form.get("author") ?? "").trim();
-    const book: NewBook = {
-      source: BookSource.Manual,
-      title: String(form.get("title") ?? "").trim(),
-      authors: author ? [author] : [],
-      isbn: String(form.get("isbn") ?? "").trim() || undefined,
-      pageCount: Number(form.get("pageCount") ?? 0) || 0,
-      categories: String(form.get("categories") ?? "")
-        .split(",")
-        .map((category) => category.trim())
-        .filter(Boolean),
-      coverUrl: String(form.get("coverUrl") ?? "").trim() || undefined,
-    };
-    if (await addBook(book)) formElement.reset();
+  function createManualBook(book: BookInput) {
+    return addBook({ ...book, source: BookSource.Manual });
   }
 
   return (
@@ -245,51 +231,11 @@ export default function CatalogSearchPanel({
       )}
       <details className={styles.manualDetails}>
         <summary>{t("manualAdd")}</summary>
-        <form
-          className={styles.manualForm}
-          onSubmit={(event) => void createManualBook(event)}
-        >
-          <TextInput
-            label={t("titleField")}
-            fieldClassName={styles.field}
-            name="title"
-            required
-            maxLength={300}
-          />
-          <TextInput
-            label={t("author")}
-            fieldClassName={styles.field}
-            name="author"
-          />
-          <TextInput
-            label={t("isbn")}
-            fieldClassName={styles.field}
-            name="isbn"
-          />
-          <TextInput
-            label={t("pages")}
-            fieldClassName={styles.field}
-            name="pageCount"
-            type="number"
-            min="0"
-            step="1"
-          />
-          <TextInput
-            label={t("categories")}
-            fieldClassName={styles.field}
-            name="categories"
-            placeholder={t("categoryHint")}
-          />
-          <TextInput
-            label={t("coverUrl")}
-            fieldClassName={styles.field}
-            name="coverUrl"
-            type="url"
-          />
-          <Button type="submit" disabled={busy || !libraryLoaded}>
-            {t("addBook")}
-          </Button>
-        </form>
+        <ManualBookForm
+          submitLabel={t("addBook")}
+          disabled={busy || !libraryLoaded}
+          onSubmit={createManualBook}
+        />
       </details>
     </section>
   );
