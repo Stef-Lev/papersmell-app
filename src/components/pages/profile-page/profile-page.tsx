@@ -238,7 +238,7 @@ export default function ProfilePage({
         <h1>{t("title")}</h1>
 
         {/* Avatar Section */}
-        <section className={styles.section}>
+        <section className={`${styles.section} ${styles.avatarSection}`}>
           <h2>{t("avatarSection")}</h2>
           <div className={styles.avatarContainer}>
             {avatarUrl ? (

@@ -155,6 +155,10 @@
     font-size: 1.25rem;
   }
 
+  .avatarSection h2 {
+    font-size: 1.125rem;
+  }
+
   .avatarImage,
   .avatarPlaceholder {
     width: 120px;
@@ -169,6 +173,11 @@
   .avatarActions :global(button) {
     flex: 1;
     min-width: 120px;
+    font-size: 0.875rem;
+  }
+
+  .avatarSection .hint {
+    font-size: 0.8125rem;
   }
 
   .buttonGroup {
