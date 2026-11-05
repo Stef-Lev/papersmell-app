@@ -400,6 +400,27 @@ describe("BookLibrary", () => {
       expectEntryOrder(["Emma"]);
     });
 
+    it("should match Greek text regardless of accents", async () => {
+      const user = userEvent.setup();
+      const greekBook = makeEntry("entry-greek", {
+        title: "Οι υπνοβάτες",
+        authors: ["Όμηρος"],
+        categories: ["Επική ποίηση"],
+      });
+      useApi(createFakeApi({ entries: [greekBook], collections: [] }));
+      await renderLoadedLibrary();
+      const search = screen.getByRole("searchbox", {
+        name: t("libraryWorkspace.searchLibrary"),
+      });
+
+      await user.type(search, "υπνοβατ");
+      expectEntryOrder(["Οι υπνοβάτες"]);
+
+      await user.clear(search);
+      await user.type(search, "όμηρος");
+      expectEntryOrder(["Οι υπνοβάτες"]);
+    });
+
     it("should show a no-match message when nothing matches the search", async () => {
       const user = userEvent.setup();
       await renderLoadedLibrary();

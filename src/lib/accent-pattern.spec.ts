@@ -10,6 +10,7 @@ describe("toAccentInsensitivePattern", () => {
     expect(matches("οδυσσεια", "Η Οδύσσεια")).toBe(true);
     expect(matches("ΟΔΎΣΣΕΙΑ", "Οδύσσεια")).toBe(true);
     expect(matches("Οδύσσεια", "οδυσσεια")).toBe(true);
+    expect(matches("υπνοβατες", "Οι υπνοβάτες")).toBe(true);
   });
 
   it("should treat the final sigma like a regular sigma", () => {

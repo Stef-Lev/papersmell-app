@@ -27,12 +27,16 @@ function stripAccents(value: string) {
   return value.normalize("NFD").replace(/\p{M}/gu, "").normalize("NFC");
 }
 
+export function normalizeAccentInsensitiveText(value: string) {
+  return stripAccents(value.toLowerCase()).replace(/ς/g, "σ");
+}
+
 /**
  * A case- and accent-insensitive "contains" regex source, so a search for
  * "οδυσσεια" finds "Οδύσσεια". Greek and common Latin accents are covered.
  */
 export function toAccentInsensitivePattern(text: string) {
-  return [...stripAccents(text.trim()).toLowerCase()]
+  return [...normalizeAccentInsensitiveText(text.trim())]
     .map((char) => {
       const accented = ACCENT_CLASSES[char];
       return accented ? `[${accented}]` : escapeRegExp(char);

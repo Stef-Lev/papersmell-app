@@ -1,12 +1,10 @@
-import { redirect } from "next/navigation";
 import { connection } from "next/server";
-import mongoose from "mongoose";
-import { auth } from "@/auth";
 import { AvatarProvider } from "@/components/avatar-provider/avatar-provider";
 import AppHeader from "@/components/app-header/app-header";
 import BottomNavigation from "@/components/app-header/bottom-navigation/bottom-navigation";
 import { getTheme } from "@/lib/get-theme";
 import { connectDB } from "@/lib/mongodb";
+import { requireSessionUser } from "@/lib/require-session-user";
 import User from "@/models/User";
 import RouteLoading from "@/components/route-loading/route-loading";
 
@@ -20,19 +18,16 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
 
 async function AuthenticatedLayout({ children }: Pick<LayoutProps<"/">, "children">) {
   await connection();
-  const session = await auth();
-  if (!session?.user) redirect("/login");
+  const sessionUser = await requireSessionUser();
 
   let initialAvatarUrl: string | null = null;
-  if (mongoose.isValidObjectId(session.user.id)) {
-    await connectDB();
-    const user = await User.findById(session.user.id)
-      .select("avatar.contentType avatarVersion")
-      .lean();
-    if (user?.avatar?.contentType) {
-      const version = user.avatarVersion || session.user.id;
-      initialAvatarUrl = `/api/profile/avatar?v=${encodeURIComponent(version)}`;
-    }
+  await connectDB();
+  const user = await User.findById(sessionUser.id)
+    .select("avatar.contentType avatarVersion")
+    .lean();
+  if (user?.avatar?.contentType) {
+    const version = user.avatarVersion || sessionUser.id;
+    initialAvatarUrl = `/api/profile/avatar?v=${encodeURIComponent(version)}`;
   }
 
   return (
@@ -40,8 +35,8 @@ async function AuthenticatedLayout({ children }: Pick<LayoutProps<"/">, "childre
       <AppHeader theme={await getTheme()} />
       {children}
       <BottomNavigation
-        userName={session.user.name}
-        userEmail={session.user.email}
+        userName={sessionUser.name}
+        userEmail={sessionUser.email}
       />
     </AvatarProvider>
   );

@@ -1,15 +1,14 @@
 import mongoose from "mongoose";
 import Link from "@/components/navigation-link/navigation-link";
-import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { getLocale, getTranslations } from "next-intl/server";
-import { auth } from "@/auth";
 import BookCover from "@/components/book-cover/book-cover";
 import StarRating from "@/components/star-rating/star-rating";
 import YearFilter from "@/components/pages/analytics-page/year-filter/year-filter";
 import ReadingOverTime from "@/components/pages/analytics-page/reading-over-time/reading-over-time";
 import CollectionFilter from "@/components/pages/analytics-page/collection-filter/collection-filter";
 import { connectDB } from "@/lib/mongodb";
+import { requireSessionUser } from "@/lib/require-session-user";
 import { SHELVES, Shelf } from "@/lib/shelves";
 import "@/models/Book";
 import UserBook from "@/models/UserBook";
@@ -46,16 +45,15 @@ function getYearFilter(
 export default async function AnalyticsPage({
   searchParams,
 }: AnalyticsPageProps) {
-  // auth() and the date math below are request-time only; keep them out of prerender.
+  // Session access and the date math below are request-time only; keep them out of prerender.
   await connection();
-  const [{ year: yearParam }, session, t, locale] = await Promise.all([
+  const [{ year: yearParam }, sessionUser, t, locale] = await Promise.all([
     searchParams,
-    auth(),
+    requireSessionUser(),
     getTranslations("pages.analytics"),
     getLocale(),
   ]);
-  const userId = session?.user?.id;
-  if (!userId || !mongoose.Types.ObjectId.isValid(userId)) redirect("/login");
+  const userId = sessionUser.id;
 
   await connectDB();
   const entries = await UserBook.find({

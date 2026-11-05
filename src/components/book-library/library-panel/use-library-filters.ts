@@ -7,6 +7,7 @@ import {
   parseMultiSelectFilter,
   serializeMultiSelectFilter,
 } from "@/components/book-library/filter-utils";
+import { normalizeAccentInsensitiveText } from "@/lib/accent-pattern";
 import type {
   LibraryFilterSection,
   LibraryFilterValues,
@@ -174,7 +175,7 @@ export function useLibraryFilters({
   }, []);
 
   const searchTerm = useMemo(
-    () => libraryQuery.trim().toLocaleLowerCase(),
+    () => normalizeAccentInsensitiveText(libraryQuery.trim()),
     [libraryQuery],
   );
   const isbnSearchTerm = useMemo(
@@ -182,7 +183,7 @@ export function useLibraryFilters({
     [libraryQuery],
   );
 
-  // Lowercased text per entry, computed once per entries change instead of per keystroke/filter.
+  // Normalized text per entry, computed once per entries change instead of per keystroke.
   const searchIndex = useMemo(
     () =>
       entries.map((entry) =>
@@ -191,7 +192,7 @@ export function useLibraryFilters({
           ...entry.book.authors,
           ...entry.book.categories,
           entry.book.isbn ?? "",
-        ].map((value) => value.toLocaleLowerCase()),
+        ].map(normalizeAccentInsensitiveText),
       ),
     [entries],
   );
