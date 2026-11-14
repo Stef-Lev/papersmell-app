@@ -71,6 +71,7 @@ describe pages in completed books, not measured pages read during a month.
 ## Tech stack
 
 - Next.js App Router and React with TypeScript
+- Expo and React Native for the iOS and Android mobile app
 - MongoDB with Mongoose
 - Auth.js credentials authentication, JWT sessions, and bcrypt password hashing
 - next-intl for localization
@@ -120,6 +121,41 @@ A development-only test login is defined in
 for sign-in; library, collection, and analytics features still require MongoDB.
 The test login is disabled in production.
 
+## Mobile app
+
+The Expo app lives in [`apps/mobile/`](./apps/mobile/) and is developed separately
+from the Next.js web app. It now includes native sign-in and registration, a
+library dashboard, advanced library filters and sorting, catalog search and
+manual book entry, ISBN barcode scanning, collection management and assignment,
+per-book metadata overrides, reviews/ratings, current-page progress, a
+date-range reading calendar, and year/collection-filtered reading insights. The
+profile screen supports name and password changes, avatar upload/removal, and
+password recovery. It uses the same MongoDB-backed API and accounts as the web
+app while preserving the web app's cookie-based authentication.
+
+Set the API URL in `apps/mobile/.env` using
+[`apps/mobile/.env.example`](./apps/mobile/.env.example). On a physical phone,
+use the development computer's LAN IP address; on Android's emulator use
+`http://10.0.2.2:3000`. Then install dependencies and start both development
+servers:
+
+```bash
+npm run dev -- --hostname 0.0.0.0
+npm ci --prefix apps/mobile
+npm --prefix apps/mobile start
+```
+
+The phone and computer should be on the same network. Sign in with an existing
+PaperSmell account or register in the mobile app. The mobile app stores a
+seven-day bearer token in the device's secure storage. Android device commands
+are available with `npm --prefix apps/mobile run android`; an iOS native
+simulator requires macOS.
+
+The native app supports English and Greek, with language and system/light/dark
+appearance preferences available on the profile screen and saved on the device.
+Camera scanning and avatar uploads should be verified on physical iOS and
+Android devices.
+
 ## Testing on a phone
 
 Connect the phone to the same network as the development computer. If needed,
@@ -161,6 +197,7 @@ development-only test login is unavailable in production mode.
 | `npm run start` | Serve an existing production build |
 | `npm run lint` | Run ESLint |
 | `npx tsc --noEmit` | Check TypeScript types |
+| `npm --prefix apps/mobile start` | Start the Expo mobile development server |
 
 There is currently no dedicated automated test script.
 
@@ -168,6 +205,7 @@ There is currently no dedicated automated test script.
 
 | Path | Contents |
 | --- | --- |
+| [`apps/mobile/`](./apps/mobile/) | Expo / React Native iOS and Android app |
 | [`src/app/`](./src/app/) | App Router pages, layouts, loading states, and API routes |
 | [`src/components/`](./src/components/) | Shared UI and page-content components |
 | [`src/models/`](./src/models/) | User, shared Book catalog, UserBook, and Collection schemas |
@@ -186,11 +224,11 @@ navigation; preserve these boundaries when adding server-side data access.
 
 ## Current limitations
 
-- No current-page tracking, reading-session logs, measured reading speed, or
-  daily reading streaks.
-- No reading calendar, reading goals, or reread history.
-- No profile editing, password reset, social features, or import/export.
+- The mobile app tracks current pages, but the web UI does not yet expose that
+  field. There are no reading-session logs, measured reading speed, or daily
+  reading streaks.
+- The mobile reading calendar uses saved start/finish date ranges; there are no
+  per-day session logs, reading goals, or reread history.
+- No social features or import/export.
 - Catalog metadata and cover availability depend on external providers.
-- The collection picker currently selects one collection per book, although the
-  data model supports multiple memberships.
 - Analytics reflect currently saved entries, not an immutable reading history.

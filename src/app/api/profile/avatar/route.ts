@@ -1,13 +1,33 @@
 import { NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
-import { auth } from "@/auth";
+import { getSessionUserId } from "@/lib/api";
 import { connectDB } from "@/lib/mongodb";
 import User from "@/models/User";
 
+function getFormDataValue(formData: object, key: string): unknown {
+  const getter: unknown = Reflect.get(formData, "get");
+  return typeof getter === "function"
+    ? Reflect.apply(getter, formData, [key])
+    : null;
+}
+
+function isUploadedFile(value: unknown): value is File {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "type" in value &&
+    typeof value.type === "string" &&
+    "size" in value &&
+    typeof value.size === "number" &&
+    "arrayBuffer" in value &&
+    typeof value.arrayBuffer === "function"
+  );
+}
+
 export async function POST(req: Request) {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const userId = await getSessionUserId();
+    if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -16,10 +36,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid form data" }, { status: 400 });
     }
 
-    const file = formData.get("avatar") as File | null;
-    if (!file) {
+    const avatarValue = getFormDataValue(formData, "avatar");
+    if (!isUploadedFile(avatarValue)) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
+    const file = avatarValue;
 
     // Validate file type
     if (!file.type.startsWith("image/")) {
@@ -35,7 +56,7 @@ export async function POST(req: Request) {
     const buffer = await file.arrayBuffer();
 
     await connectDB();
-    const user = await User.findById(session.user.id);
+    const user = await User.findById(userId);
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -62,13 +83,13 @@ export async function POST(req: Request) {
 
 export async function GET() {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const userId = await getSessionUserId();
+    if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     await connectDB();
-    const user = await User.findById(session.user.id);
+    const user = await User.findById(userId);
 
     if (!user || !user.avatar?.data) {
       return NextResponse.json({ error: "Avatar not found" }, { status: 404 });
@@ -91,13 +112,13 @@ export async function GET() {
 
 export async function DELETE() {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const userId = await getSessionUserId();
+    if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     await connectDB();
-    const user = await User.findById(session.user.id);
+    const user = await User.findById(userId);
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });

@@ -4,9 +4,11 @@ import { afterEach, vi } from "vitest";
 import { resetNavigation } from "./navigation";
 
 // Browser APIs jsdom lacks that Radix Select and Ark UI popovers rely on.
-Element.prototype.hasPointerCapture ??= () => false;
-Element.prototype.releasePointerCapture ??= () => {};
-Element.prototype.scrollIntoView ??= () => {};
+if (typeof Element !== "undefined") {
+  Element.prototype.hasPointerCapture ??= () => false;
+  Element.prototype.releasePointerCapture ??= () => {};
+  Element.prototype.scrollIntoView ??= () => {};
+}
 globalThis.ResizeObserver ??= class {
   observe() {}
   unobserve() {}

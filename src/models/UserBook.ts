@@ -14,6 +14,15 @@ const userBookSchema = new mongoose.Schema(
       required: true,
     },
     status: { type: String, enum: SHELVES, default: Shelf.ToRead },
+    currentPage: {
+      type: Number,
+      min: 0,
+      default: 0,
+      validate: {
+        validator: (value: number) => Number.isInteger(value),
+        message: "Current page must be a whole number.",
+      },
+    },
     startedAt: { type: Date, default: null },
     finishedAt: { type: Date, default: null },
     collectionIds: [

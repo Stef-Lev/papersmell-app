@@ -6,6 +6,7 @@ export type { Shelf };
 export type BookEntryData = {
   id: string;
   status: Shelf;
+  currentPage?: number;
   rating: number | null;
   review: string;
   startedAt: string;

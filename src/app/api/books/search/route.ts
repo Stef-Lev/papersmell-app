@@ -1,10 +1,10 @@
-import { auth } from "@/auth";
+import { getSessionUserId } from "@/lib/api";
 import { searchCatalog } from "@/lib/catalog-search";
 import { looksLikeIsbn, toIsbn13 } from "@/lib/isbn";
 
 export async function GET(request: Request) {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const userId = await getSessionUserId();
+  if (!userId) {
     return Response.json({ error: "Authentication required." }, { status: 401 });
   }
 

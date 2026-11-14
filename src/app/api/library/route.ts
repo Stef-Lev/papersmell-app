@@ -39,9 +39,14 @@ export async function GET() {
         Array.isArray(overrides?.authors) && overrides.authors.length
           ? overrides.authors
           : undefined;
+      const hasIsbnOverride =
+        !!overrides && Object.prototype.hasOwnProperty.call(overrides, "isbn");
+      const hasCoverOverride =
+        !!overrides && Object.prototype.hasOwnProperty.call(overrides, "coverUrl");
       return {
         id: entry._id.toString(),
         status: entry.status,
+        currentPage: entry.currentPage ?? 0,
         rating: entry.rating,
         review: entry.review ?? "",
         startedAt: entry.startedAt ? toDateOnly(entry.startedAt) : "",
@@ -54,10 +59,18 @@ export async function GET() {
           externalId: book.externalId,
           title: overrides?.title || book.title,
           authors: authorOverride || book.authors,
-          isbn: overrides?.isbn || book.isbn,
+          isbn: hasIsbnOverride
+            ? typeof overrides?.isbn === "string" && overrides.isbn
+              ? overrides.isbn
+              : undefined
+            : book.isbn,
           pageCount: overrides?.pageCount ?? book.pageCount,
           categories: book.categories,
-          coverUrl: overrides?.coverUrl || book.coverUrl,
+          coverUrl: hasCoverOverride
+            ? typeof overrides?.coverUrl === "string" && overrides.coverUrl
+              ? overrides.coverUrl
+              : undefined
+            : book.coverUrl,
           publishedDate: book.publishedDate,
         },
         bookOverrides: overrides ? { ...overrides, authors: authorOverride } : {},

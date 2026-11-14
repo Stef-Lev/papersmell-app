@@ -1,12 +1,29 @@
 import "server-only";
 import mongoose from "mongoose";
+import { headers } from "next/headers";
 import { auth } from "@/auth";
+import { readMobileAccessToken } from "@/lib/mobile-token";
 import Collection from "@/models/Collection";
 
 /** The signed-in user's id, or null when there is no valid session. */
 export async function getSessionUserId() {
   const session = await auth();
-  const id = session?.user?.id;
+  const sessionId = session?.user?.id;
+  if (sessionId && mongoose.Types.ObjectId.isValid(sessionId)) {
+    return new mongoose.Types.ObjectId(sessionId);
+  }
+
+  const authorization = (await headers()).get("authorization");
+  const match = authorization?.match(/^Bearer\s+(\S+)$/i);
+  if (!match) return null;
+
+  let tokenUser: Awaited<ReturnType<typeof readMobileAccessToken>>;
+  try {
+    tokenUser = await readMobileAccessToken(match[1]);
+  } catch {
+    return null;
+  }
+  const id = tokenUser?.id;
   return id && mongoose.Types.ObjectId.isValid(id)
     ? new mongoose.Types.ObjectId(id)
     : null;

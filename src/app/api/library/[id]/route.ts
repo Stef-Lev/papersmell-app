@@ -9,6 +9,8 @@ import {
 import { toDateOnly } from "@/lib/dates";
 import { connectDB } from "@/lib/mongodb";
 import { Shelf, isShelf } from "@/lib/shelves";
+import { isValidCurrentPage } from "@/lib/book-progress";
+import Book from "@/models/Book";
 import UserBook from "@/models/UserBook";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -43,6 +45,12 @@ export async function PATCH(request: Request, context: RouteContext) {
       return jsonError("Select a valid shelf.", 400);
     }
     set.status = updates.status;
+  }
+  if (updates.currentPage !== undefined) {
+    if (!isValidCurrentPage(updates.currentPage)) {
+      return jsonError("Current page must be a non-negative whole number.", 400);
+    }
+    set.currentPage = updates.currentPage;
   }
   if (updates.rating !== undefined) {
     const rating = updates.rating;
@@ -106,7 +114,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       if (typeof overridesObj.isbn !== "string" || overridesObj.isbn.length > 20) {
         return jsonError("ISBN must be 20 characters or fewer.", 400);
       }
-      validated.isbn = overridesObj.isbn.trim() || undefined;
+      validated.isbn = overridesObj.isbn.trim();
     }
     
     if (overridesObj.pageCount !== undefined) {
@@ -121,7 +129,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     
     if (overridesObj.coverUrl !== undefined) {
       if (overridesObj.coverUrl === null || overridesObj.coverUrl === "") {
-        validated.coverUrl = undefined;
+        validated.coverUrl = "";
       } else if (typeof overridesObj.coverUrl === "string") {
         if (overridesObj.coverUrl.length > 2048) {
           return jsonError("Cover URL must be 2048 characters or fewer.", 400);
@@ -155,6 +163,31 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
   const entry = await UserBook.findOne({ _id: id, userId });
   if (!entry) return jsonError("Book not found.", 404);
+  const updatedOverrides = set.bookOverrides as
+    | Record<string, unknown>
+    | undefined;
+  const overridesPageCountChanged =
+    !!updatedOverrides &&
+    Object.prototype.hasOwnProperty.call(updatedOverrides, "pageCount");
+  if (set.currentPage !== undefined || overridesPageCountChanged) {
+    const catalogBook = await Book.findById(entry.bookId)
+      .select("pageCount")
+      .lean();
+    const overridePageCount = overridesPageCountChanged
+      ? updatedOverrides?.pageCount
+      : entry.bookOverrides?.pageCount;
+    const pageCount =
+      typeof overridePageCount === "number"
+        ? overridePageCount
+        : catalogBook?.pageCount;
+    const currentPage =
+      typeof set.currentPage === "number"
+        ? set.currentPage
+        : entry.currentPage ?? 0;
+    if (!isValidCurrentPage(currentPage, pageCount)) {
+      return jsonError("Current page cannot exceed the book's page count.", 400);
+    }
+  }
 
   const statusChanged = set.status !== undefined && set.status !== entry.status;
   if (

@@ -11,7 +11,7 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     setupFiles: ["./src/test/setup.ts"],
-    include: ["src/**/*.spec.{ts,tsx}"],
+    include: ["src/**/*.spec.{ts,tsx}", "apps/mobile/src/**/*.spec.{ts,tsx}"],
     css: {
       modules: { classNameStrategy: "non-scoped" },
     },
