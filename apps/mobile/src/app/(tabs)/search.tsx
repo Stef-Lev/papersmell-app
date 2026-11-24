@@ -1,20 +1,17 @@
 import { useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import { LocalizedText as Text } from "../../components/localized-text";
-import { router } from "expo-router";
+import { ChevronDown, ChevronRight, ScanBarcode, Search } from "lucide-react-native";
 import { AppButton } from "../../components/app-button";
 import { BarcodeScanner } from "../../components/barcode-scanner";
 import { BookCard } from "../../components/book-card";
-import { EmptyState } from "../../components/empty-state";
 import { Notice } from "../../components/notice";
 import { OptionSelector } from "../../components/option-selector";
-import { Panel } from "../../components/panel";
 import { Screen } from "../../components/screen";
-import { ShelfSelector } from "../../components/shelf-selector";
 import { TextField } from "../../components/text-field";
 import { mobileApi } from "../../lib/api";
 import { spacing, type ThemeColors } from "../../lib/theme";
-import type { CatalogBook, Shelf } from "../../lib/types";
+import { shelves, type CatalogBook, type Shelf } from "../../lib/types";
 import { useLibrary } from "../../hooks/use-library";
 import {
   getErrorMessage,
@@ -26,11 +23,11 @@ import { usePreferences } from "../../providers/preferences-provider";
 
 export default function SearchScreen() {
   const styles = useThemedStyles(createStyles);
-  const { locale } = usePreferences();
+  const { colors, locale } = usePreferences();
   const { collections } = useLibrary();
   const [query, setQuery] = useState("");
   const [shelf, setShelf] = useState<Shelf>("to-read");
-  const [collectionIds, setCollectionIds] = useState<string[]>([]);
+  const [collectionId, setCollectionId] = useState("");
   const [results, setResults] = useState<CatalogBook[]>([]);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -65,7 +62,7 @@ export default function SearchScreen() {
     setError("");
     setMessage("");
     try {
-      await mobileApi.addBook(book, shelf, collectionIds);
+      await mobileApi.addBook(book, shelf, collectionId ? [collectionId] : []);
       setMessage(
         translateMessage("mobile.search.addedBook", locale, {
           title: book.title,
@@ -112,53 +109,124 @@ export default function SearchScreen() {
   return (
     <Screen
       bottomNavigation
-      titleKey="mobile.search.title"
-      subtitleKey="mobile.search.subtitle"
+      headerIcon={<Search color={colors.secondaryContrast} size={24} />}
+      titleKey="mobile.search.searchBooks"
     >
-      <Panel style={styles.searchPanel}>
-        <TextField
-          autoCapitalize="none"
-          label="mobile.search.titleAuthorIsbn"
-          onChangeText={setQuery}
-          onSubmitEditing={() => void search()}
-          placeholder="mobile.search.tryTitleIsbn"
-          value={query}
-        />
-        <View style={styles.searchActions}>
-          <AppButton
-            disabled={query.trim().length < 2}
-            label="mobile.search.searchBooks"
-            loading={searching}
-            onPress={() => void search()}
-            style={styles.searchButton}
-          />
-          <AppButton
-            label="mobile.search.scanIsbn"
-            onPress={() => setShowScanner(true)}
-            variant="outline"
-            style={styles.searchButton}
-          />
+      <View style={styles.catalogPanel}>
+        <View style={styles.sectionHeading}>
+          <Search color={colors.primary} size={18} />
+          <Text messageKey="mobile.search.addBooks" style={styles.sectionTitle} />
         </View>
-      </Panel>
-      <View style={styles.shelfSection}>
-        <Text messageKey="mobile.search.addToShelf" style={styles.sectionTitle} />
-        <ShelfSelector
-          onChange={(value) => {
-            if (value !== "all") setShelf(value);
-          }}
-          value={shelf}
-        />
-        <OptionSelector
-          labelKey="mobile.search.addToCollection"
-          onChange={setCollectionIds}
-          options={collections.map(({ id, name }) => ({ value: id, label: name }))}
-          selected={collectionIds}
-        />
-        <AppButton
-          label="mobile.library.manageCollections"
-          onPress={() => router.push("/collections")}
-          variant="outline"
-        />
+        <View style={styles.searchForm}>
+          <TextField
+            autoCapitalize="none"
+            label="mobile.search.titleAuthorIsbn"
+            onChangeText={setQuery}
+            onSubmitEditing={() => void search()}
+            placeholder="mobile.search.tryTitleIsbn"
+            value={query}
+          />
+          <View style={styles.searchActions}>
+            <AppButton
+              disabled={query.trim().length < 2}
+              icon={<Search color={colors.primaryContrast} size={16} />}
+              label="mobile.search.search"
+              loading={searching}
+              onPress={() => void search()}
+              style={styles.searchButton}
+            />
+            <AppButton
+              icon={<ScanBarcode color={colors.secondaryContrast} size={16} />}
+              label="mobile.search.scanIsbn"
+              onPress={() => setShowScanner(true)}
+              style={styles.searchButton}
+              variant="secondary"
+            />
+          </View>
+        </View>
+        <View style={styles.selectRow}>
+          <View style={styles.selectField}>
+            <OptionSelector
+              labelKey="mobile.search.addToShelf"
+              multiple={false}
+              onChange={(values) => {
+                const nextShelf = shelves.find((option) => option === values[0]);
+                if (nextShelf) setShelf(nextShelf);
+              }}
+              options={shelves.map((value) => ({
+                value,
+                messageKey: getShelfMessageKey(value),
+              }))}
+              selected={[shelf]}
+            />
+          </View>
+          <View style={styles.selectField}>
+            <OptionSelector
+              emptyLabelKey="mobile.search.noCollection"
+              labelKey="mobile.search.addToCollection"
+              multiple={false}
+              onChange={(values) => setCollectionId(values[0] ?? "")}
+              options={collections.map(({ id, name }) => ({
+                value: id,
+                label: name,
+              }))}
+              selected={collectionId ? [collectionId] : []}
+            />
+          </View>
+        </View>
+        {error ? <Notice message={error} /> : null}
+        {message ? <Notice message={message} variant="success" /> : null}
+        {results.length ? (
+          <View style={styles.results}>
+            <Text messageKey="mobile.search.searchResults" style={styles.sectionTitle} />
+            {results.map((book, index) => {
+              const key = book.externalId ?? `${book.title}-${index}`;
+              return (
+                <BookCard
+                  actionLabel={
+                    addingId === key
+                      ? "mobile.search.adding"
+                      : "mobile.search.addToLibrary"
+                  }
+                  book={book}
+                  key={key}
+                  onPress={() => void addBook(book, key)}
+                />
+              );
+            })}
+          </View>
+        ) : null}
+        <View style={styles.manualDetails}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ expanded: showManual }}
+            onPress={() => setShowManual((current) => !current)}
+            style={styles.manualToggle}
+          >
+            {showManual ? (
+              <ChevronDown color={colors.primary} size={16} />
+            ) : (
+              <ChevronRight color={colors.primary} size={16} />
+            )}
+            <Text
+              messageKey="mobile.search.manualSummary"
+              style={styles.manualSummary}
+            />
+          </Pressable>
+          {showManual ? (
+            <ManualBookForm
+              busy={addingId === "manual"}
+              onCancel={() => {
+                setShowManual(false);
+                setError("");
+              }}
+              onSave={(values) => {
+                setError("");
+                void addManualBook(values);
+              }}
+            />
+          ) : null}
+        </View>
       </View>
       {showScanner ? (
         <BarcodeScanner
@@ -170,59 +238,6 @@ export default function SearchScreen() {
           }}
         />
       ) : null}
-      {error ? <Notice message={error} /> : null}
-      {message ? <Notice message={message} variant="success" /> : null}
-      {results.length ? (
-        <View style={styles.results}>
-          <Text messageKey="mobile.search.searchResults" style={styles.sectionTitle} />
-          {results.map((book, index) => {
-            const key = book.externalId ?? `${book.title}-${index}`;
-            return (
-              <BookCard
-                actionLabel={
-                  addingId === key
-                    ? "mobile.search.adding"
-                    : "mobile.search.addToLibrary"
-                }
-                book={book}
-                key={key}
-                onPress={() => void addBook(book, key)}
-              />
-            );
-          })}
-        </View>
-      ) : null}
-      {!results.length && !message && !searching ? (
-        <Panel>
-          <EmptyState
-            titleKey="mobile.search.emptyTitle"
-            descriptionKey="mobile.search.emptyDescription"
-          />
-        </Panel>
-      ) : null}
-      <Panel style={styles.manualPanel}>
-        <Text messageKey="mobile.search.cannotFind" style={styles.sectionTitle} />
-        <Text messageKey="mobile.search.manualDescription" style={styles.description} />
-        {showManual ? (
-          <ManualBookForm
-            busy={addingId === "manual"}
-            onCancel={() => {
-              setShowManual(false);
-              setError("");
-            }}
-            onSave={(values) => {
-              setError("");
-              void addManualBook(values);
-            }}
-          />
-        ) : (
-          <AppButton
-            label="mobile.search.manualAdd"
-            onPress={() => setShowManual(true)}
-            variant="outline"
-          />
-        )}
-      </Panel>
     </Screen>
   );
 }
@@ -296,13 +311,41 @@ function ManualBookForm({
 }
 
 const createStyles = (colors: ThemeColors) => StyleSheet.create({
-  searchPanel: { gap: spacing.lg },
-  searchActions: { flexDirection: "row", gap: spacing.sm },
-  searchButton: { flex: 1 },
-  shelfSection: { gap: spacing.sm },
-  sectionTitle: { color: colors.text, fontSize: 17, fontWeight: "800" },
+  catalogPanel: {
+    gap: 20,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  sectionHeading: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  sectionTitle: { color: colors.text, fontSize: 17, fontWeight: "600" },
+  searchForm: { gap: spacing.md },
+  searchActions: { flexDirection: "row", gap: spacing.md },
+  searchButton: { flex: 1, minWidth: 0 },
+  selectRow: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm },
+  selectField: { flex: 1, minWidth: 0 },
   results: { gap: spacing.md },
-  manualPanel: { gap: spacing.md, marginTop: spacing.sm },
+  manualDetails: {
+    gap: spacing.lg,
+    paddingTop: spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  manualToggle: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+  },
+  manualSummary: {
+    flex: 1,
+    color: colors.primary,
+    fontSize: 14,
+    fontWeight: "600",
+  },
   manualForm: { gap: spacing.md },
-  description: { color: colors.muted, fontSize: 14 },
 });

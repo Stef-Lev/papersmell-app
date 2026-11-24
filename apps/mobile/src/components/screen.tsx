@@ -3,7 +3,7 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import type { ReactNode } from "react";
 import { AppHeader } from "./app-header";
 import { LocalizedText as Text } from "./localized-text";
-import { spacing } from "../lib/theme";
+import { radius, spacing } from "../lib/theme";
 import { useThemedStyles } from "../lib/use-themed-styles";
 import type { ThemeColors } from "../lib/theme";
 import type {
@@ -12,6 +12,7 @@ import type {
 } from "../lib/translation";
 
 type Props = {
+  headerIcon?: ReactNode;
   subtitle?: string;
   subtitleKey?: MobileMessageKey;
   subtitleValues?: MessageValues;
@@ -23,6 +24,7 @@ type Props = {
 );
 
 export function Screen({
+  headerIcon,
   title,
   titleKey,
   titleValues,
@@ -43,23 +45,40 @@ export function Screen({
         ]}
         keyboardShouldPersistTaps="handled"
       >
-        <AppHeader />
-        <View style={styles.heading}>
-          {titleKey ? (
-            <Text messageKey={titleKey} style={styles.title} values={titleValues} />
-          ) : (
-            <Text style={styles.title}>{title}</Text>
-          )}
-          {subtitleKey ? (
-            <Text
-              messageKey={subtitleKey}
-              style={styles.subtitle}
-              values={subtitleValues}
-            />
-          ) : subtitle ? (
-            <Text style={styles.subtitle}>{subtitle}</Text>
-          ) : null}
-        </View>
+        {headerIcon ? (
+          <View style={styles.hero}>
+            <View style={styles.heroIcon}>{headerIcon}</View>
+            {titleKey ? (
+              <Text
+                messageKey={titleKey}
+                style={styles.heroTitle}
+                values={titleValues}
+              />
+            ) : (
+              <Text style={styles.heroTitle}>{title}</Text>
+            )}
+          </View>
+        ) : (
+          <>
+            <AppHeader />
+            <View style={styles.heading}>
+              {titleKey ? (
+                <Text messageKey={titleKey} style={styles.title} values={titleValues} />
+              ) : (
+                <Text style={styles.title}>{title}</Text>
+              )}
+              {subtitleKey ? (
+                <Text
+                  messageKey={subtitleKey}
+                  style={styles.subtitle}
+                  values={subtitleValues}
+                />
+              ) : subtitle ? (
+                <Text style={styles.subtitle}>{subtitle}</Text>
+              ) : null}
+            </View>
+          </>
+        )}
         {children}
       </ScrollView>
     </SafeAreaView>
@@ -69,6 +88,28 @@ export function Screen({
 const createStyles = (colors: ThemeColors) => StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.background },
   content: { flexGrow: 1, gap: spacing.lg, padding: spacing.lg, paddingBottom: 36 },
+  hero: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.lg,
+    paddingVertical: spacing.xl,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  heroIcon: {
+    width: 56,
+    height: 56,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radius.xxl,
+    backgroundColor: colors.secondary,
+  },
+  heroTitle: {
+    color: colors.text,
+    fontSize: 24,
+    fontWeight: "700",
+    lineHeight: 30,
+  },
   heading: { gap: spacing.xs, marginBottom: spacing.xs },
   title: { color: colors.text, fontSize: 30, fontWeight: "800", lineHeight: 36 },
   subtitle: { color: colors.muted, fontSize: 15, lineHeight: 22 },
