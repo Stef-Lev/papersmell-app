@@ -3,14 +3,18 @@ export type ThemeColors = {
   surface: string;
   text: string;
   muted: string;
-  primary: string;
-  primarySoft: string;
   border: string;
-  coral: string;
-  coralSoft: string;
+  primary: string;
+  primaryContrast: string;
+  primarySoft: string;
+  secondary: string;
+  secondaryContrast: string;
+  secondarySoft: string;
+  accent: string;
+  focus: string;
   danger: string;
   dangerSoft: string;
-  white: string;
+  success: string;
 };
 
 export const lightColors: ThemeColors = {
@@ -18,29 +22,37 @@ export const lightColors: ThemeColors = {
   surface: "#ffffff",
   text: "#0d2224",
   muted: "#285b5e",
-  primary: "#377d80",
-  primarySoft: "#dceceb",
   border: "#bad8d7",
-  coral: "#ff9182",
-  coralSoft: "#fff5f3",
-  danger: "#b91c1c",
+  primary: "#377d80",
+  primaryContrast: "#ffffff",
+  primarySoft: "#dceceb",
+  secondary: "#ff9182",
+  secondaryContrast: "#0d2224",
+  secondarySoft: "#fff5f3",
+  accent: "#ff9182",
+  focus: "#377d80",
+  danger: "#dc2626",
   dangerSoft: "#fef2f2",
-  white: "#ffffff",
+  success: "#306e71",
 };
 
 export const darkColors: ThemeColors = {
-  background: "#111c1d",
-  surface: "#1b2b2c",
-  text: "#f0f7f6",
-  muted: "#b6cdcd",
-  primary: "#75b6b4",
-  primarySoft: "#294344",
-  border: "#3d5a5b",
-  coral: "#ff9d8f",
-  coralSoft: "#392b2a",
-  danger: "#ff9b9b",
-  dangerSoft: "#3b2528",
-  white: "#ffffff",
+  background: "#0d2224",
+  surface: "#183638",
+  text: "#eff7f6",
+  muted: "#bad8d7",
+  border: "#21494c",
+  primary: "#8dbdbc",
+  primaryContrast: "#0d2224",
+  primarySoft: "#21494c",
+  secondary: "#ff9182",
+  secondaryContrast: "#0d2224",
+  secondarySoft: "#421f20",
+  accent: "#ffb1a5",
+  focus: "#8dbdbc",
+  danger: "#f87171",
+  dangerSoft: "#450a0a",
+  success: "#8dbdbc",
 };
 
 export const colors = lightColors;
@@ -55,8 +67,12 @@ export const spacing = {
 };
 
 export const radius = {
-  sm: 10,
-  md: 16,
-  lg: 20,
-  pill: 999,
+  xs: 2,
+  sm: 4,
+  md: 6,
+  lg: 8,
+  xl: 12,
+  xxl: 16,
+  xxxl: 24,
+  pill: 9999,
 };

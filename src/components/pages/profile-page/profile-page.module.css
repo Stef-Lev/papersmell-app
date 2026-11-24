@@ -168,11 +168,15 @@
 
   .avatarActions {
     width: 100%;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
   }
 
   .avatarActions :global(button) {
-    flex: 1;
-    min-width: 120px;
+    flex: none;
+    width: 100%;
+    min-width: 0;
     font-size: 0.875rem;
   }
 

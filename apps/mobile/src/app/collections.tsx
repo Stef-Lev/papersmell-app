@@ -128,14 +128,14 @@ export default function CollectionsScreen() {
                 label="mobile.collections.save"
                 loading={busy === collection.id}
                 onPress={() => void renameCollection(collection.id)}
-                variant="secondary"
+                variant="outline"
                 style={styles.action}
               />
               <AppButton
                 disabled={Boolean(busy)}
                 label="mobile.collections.delete"
                 onPress={() => confirmDelete(collection.id, collection.name)}
-                variant="danger"
+                variant="destructive"
                 style={styles.action}
               />
             </View>

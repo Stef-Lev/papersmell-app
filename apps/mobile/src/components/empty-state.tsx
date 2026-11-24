@@ -30,7 +30,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     gap: spacing.sm,
     padding: spacing.xxl,
   },
-  mark: { color: colors.coral, fontSize: 34, fontWeight: "800" },
+  mark: { color: colors.accent, fontSize: 34, fontWeight: "800" },
   title: { color: colors.text, fontSize: 16, fontWeight: "700", textAlign: "center" },
   description: { color: colors.muted, fontSize: 14, lineHeight: 20, textAlign: "center" },
 });

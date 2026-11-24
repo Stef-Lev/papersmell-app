@@ -185,11 +185,59 @@ export const mobileApi = {
 
   async getAvatarSource(version: string) {
     const session = await readStoredSession();
-    if (!session?.token) return null;
-    return {
-      uri: `${getApiBaseUrl()}/api/profile/avatar?v=${encodeURIComponent(version)}`,
-      headers: { Authorization: `Bearer ${session.token}` },
-    };
+    if (!session?.token) {
+      throw new MobileMessageError("mobile.errors.signInExpired");
+    }
+
+    const response = await fetch(
+      `${getApiBaseUrl()}/api/profile/avatar?v=${encodeURIComponent(version)}`,
+      {
+        headers: {
+          Accept: "image/*",
+          Authorization: `Bearer ${session.token}`,
+        },
+      },
+    );
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        await clearStoredSession();
+        await unauthorizedHandler?.();
+      }
+      throw new ApiError(
+        `Profile photo request failed (${response.status}).`,
+        response.status,
+      );
+    }
+
+    const contentType = response.headers
+      .get("content-type")
+      ?.split(";")[0]
+      .trim();
+    if (!contentType?.startsWith("image/")) {
+      throw new ApiError(
+        "Profile photo endpoint returned a non-image response.",
+        response.status,
+      );
+    }
+
+    const image = await response.blob();
+    const uri = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === "string") {
+          resolve(reader.result);
+        } else {
+          reject(new Error("Profile photo could not be decoded."));
+        }
+      };
+      reader.onerror = () => {
+        reject(reader.error ?? new Error("Profile photo could not be decoded."));
+      };
+      reader.readAsDataURL(image);
+    });
+
+    return { uri };
   },
 
   requestPasswordReset(email: string) {

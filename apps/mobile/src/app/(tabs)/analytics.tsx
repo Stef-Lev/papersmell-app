@@ -136,7 +136,7 @@ export default function AnalyticsScreen() {
       <AppButton
         label="mobile.analytics.openCalendar"
         onPress={() => router.push("/calendar")}
-        variant="secondary"
+        variant="outline"
       />
       <View style={styles.metrics}>
         <MetricCard

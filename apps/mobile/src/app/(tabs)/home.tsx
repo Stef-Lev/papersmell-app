@@ -41,7 +41,7 @@ export default function HomeScreen() {
       {error ? (
         <Panel>
           <Notice message={error} />
-          <AppButton label="mobile.home.tryAgain" onPress={refresh} variant="secondary" />
+          <AppButton label="mobile.home.tryAgain" onPress={refresh} variant="outline" />
         </Panel>
       ) : null}
       <View style={styles.metrics}>
@@ -62,7 +62,7 @@ export default function HomeScreen() {
         <AppButton
           label="mobile.home.openLibrary"
           onPress={() => router.push("/(tabs)/library")}
-          variant="secondary"
+          variant="outline"
         />
       </Panel>
       <View style={styles.sectionHeading}>

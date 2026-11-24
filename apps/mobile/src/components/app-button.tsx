@@ -2,8 +2,10 @@ import {
   ActivityIndicator,
   Pressable,
   StyleSheet,
+  View,
   type ViewStyle,
 } from "react-native";
+import type { ReactNode } from "react";
 import { LocalizedText as Text } from "./localized-text";
 import { radius, spacing } from "../lib/theme";
 import { usePreferences } from "../providers/preferences-provider";
@@ -15,7 +17,8 @@ type Props = {
   onPress: () => void;
   disabled?: boolean;
   loading?: boolean;
-  variant?: "primary" | "secondary" | "danger";
+  variant?: "primary" | "secondary" | "outline" | "destructive";
+  icon?: ReactNode;
   style?: ViewStyle;
 };
 
@@ -25,11 +28,21 @@ export function AppButton({
   disabled = false,
   loading = false,
   variant = "primary",
+  icon,
   style,
 }: Props) {
   const { colors } = usePreferences();
   const styles = useThemedStyles(createStyles);
   const isDisabled = disabled || loading;
+  const activityColor =
+    variant === "primary"
+      ? colors.primaryContrast
+      : variant === "secondary"
+        ? colors.secondaryContrast
+        : variant === "destructive"
+          ? colors.danger
+          : colors.text;
+
   return (
     <Pressable
       accessibilityRole="button"
@@ -45,17 +58,12 @@ export function AppButton({
       ]}
     >
       {loading ? (
-        <ActivityIndicator
-          color={
-            variant === "primary"
-              ? colors.white
-              : variant === "danger"
-                ? colors.danger
-                : colors.primary
-          }
-        />
+        <ActivityIndicator color={activityColor} />
       ) : (
-        <Text messageKey={label} style={[styles.label, styles[`${variant}Label`]]} />
+        <View style={styles.buttonContent}>
+          {icon}
+          <Text messageKey={label} style={[styles.label, styles[`${variant}Label`]]} />
+        </View>
       )}
     </Pressable>
   );
@@ -63,27 +71,39 @@ export function AppButton({
 
 const createStyles = (colors: import("../lib/theme").ThemeColors) => StyleSheet.create({
   button: {
-    minHeight: 48,
+    minHeight: 44,
     alignItems: "center",
     justifyContent: "center",
+    paddingVertical: 10,
     paddingHorizontal: spacing.lg,
-    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: "transparent",
+    borderRadius: radius.xl,
+  },
+  buttonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
   },
   primary: { backgroundColor: colors.primary },
+  outline: {
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+  },
   secondary: {
+    backgroundColor: colors.secondary,
+    borderColor: colors.secondary,
+  },
+  destructive: {
     backgroundColor: colors.surface,
     borderColor: colors.border,
-    borderWidth: 1,
   },
-  danger: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1,
-  },
-  label: { fontSize: 15, fontWeight: "700" },
-  primaryLabel: { color: colors.white },
-  secondaryLabel: { color: colors.primary },
-  dangerLabel: { color: colors.danger },
+  label: { flexShrink: 1, fontSize: 14, fontWeight: "600", lineHeight: 18 },
+  primaryLabel: { color: colors.primaryContrast },
+  outlineLabel: { color: colors.text },
+  secondaryLabel: { color: colors.secondaryContrast },
+  destructiveLabel: { color: colors.danger },
   disabled: { opacity: 0.5 },
   pressed: { opacity: 0.82 },
 });

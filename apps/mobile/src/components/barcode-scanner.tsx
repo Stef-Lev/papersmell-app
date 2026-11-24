@@ -101,7 +101,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   title: { color: colors.text, fontSize: 20, fontWeight: "800" },
   close: { color: colors.primary, fontSize: 15, fontWeight: "700" },
-  camera: { height: "65%", overflow: "hidden", borderRadius: radius.md },
+  camera: { height: "65%", overflow: "hidden", borderRadius: radius.xxl },
   permission: { alignItems: "center", gap: spacing.lg, padding: spacing.xl },
   message: { color: colors.text, fontSize: 15, textAlign: "center" },
   hint: { color: colors.muted, textAlign: "center", fontSize: 14 },

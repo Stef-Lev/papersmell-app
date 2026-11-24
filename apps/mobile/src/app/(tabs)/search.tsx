@@ -135,7 +135,7 @@ export default function SearchScreen() {
           <AppButton
             label="mobile.search.scanIsbn"
             onPress={() => setShowScanner(true)}
-            variant="secondary"
+            variant="outline"
             style={styles.searchButton}
           />
         </View>
@@ -157,7 +157,7 @@ export default function SearchScreen() {
         <AppButton
           label="mobile.library.manageCollections"
           onPress={() => router.push("/collections")}
-          variant="secondary"
+          variant="outline"
         />
       </View>
       {showScanner ? (
@@ -219,7 +219,7 @@ export default function SearchScreen() {
           <AppButton
             label="mobile.search.manualAdd"
             onPress={() => setShowManual(true)}
-            variant="secondary"
+            variant="outline"
           />
         )}
       </Panel>
@@ -289,7 +289,7 @@ function ManualBookForm({
       <AppButton
         label="mobile.common.cancel"
         onPress={onCancel}
-        variant="secondary"
+        variant="outline"
       />
     </View>
   );

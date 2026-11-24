@@ -38,8 +38,8 @@ export function Notice({
 const createStyles = (colors: ThemeColors) => StyleSheet.create({
   notice: { padding: spacing.md, borderRadius: radius.sm },
   error: { backgroundColor: colors.dangerSoft },
-  success: { backgroundColor: colors.coralSoft },
+  success: { backgroundColor: colors.primarySoft },
   text: { fontSize: 14, lineHeight: 20 },
   errorText: { color: colors.danger },
-  successText: { color: colors.muted },
+  successText: { color: colors.success },
 });

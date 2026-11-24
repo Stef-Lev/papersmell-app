@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect, router } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
+import { Camera, Trash2 } from "lucide-react-native";
 import { AppButton } from "../../components/app-button";
 import { LoadingState } from "../../components/loading-state";
 import { Notice } from "../../components/notice";
@@ -19,11 +20,12 @@ import { useThemedStyles } from "../../lib/use-themed-styles";
 import type { ThemeColors } from "../../lib/theme";
 import { getErrorMessage, translateMessage } from "../../lib/translation";
 
-type AvatarSource = { uri: string; headers: Record<string, string> };
+type AvatarSource = { uri: string };
 
 export default function ProfileScreen() {
   const { signOut, updateUserName } = useAuth();
   const {
+    colors,
     locale,
     theme,
     preferencesError,
@@ -196,88 +198,56 @@ export default function ProfileScreen() {
       {profile ? (
         <>
           <Panel style={styles.profilePanel}>
-            {profile.hasAvatar && avatarSource ? (
-              <Image
-                alt={translateMessage("mobile.profile.profilePhoto", locale)}
-                source={avatarSource}
-                style={styles.avatar}
-              />
-            ) : (
-              <View style={styles.avatarPlaceholder}>
-                <Text style={styles.avatarInitial}>{profile.name.charAt(0).toUpperCase()}</Text>
+            <LocalizedText
+              messageKey="mobile.profile.avatarSection"
+              style={styles.avatarSectionTitle}
+            />
+            <View style={styles.avatarContent}>
+              {profile.hasAvatar && avatarSource ? (
+                <Image
+                  alt={translateMessage("mobile.profile.profilePhoto", locale)}
+                  onError={() => {
+                    setAvatarSource(null);
+                    setError(
+                      translateMessage("mobile.errors.loadProfilePhoto", locale),
+                    );
+                  }}
+                  resizeMode="cover"
+                  source={avatarSource}
+                  style={styles.avatar}
+                />
+              ) : (
+                <View style={styles.avatarPlaceholder}>
+                  <Text style={styles.avatarInitial}>
+                    {profile.name.charAt(0).toUpperCase()}
+                  </Text>
+                </View>
+              )}
+              <View style={styles.avatarActions}>
+                <AppButton
+                  icon={<Camera color={colors.secondaryContrast} size={18} />}
+                  label="mobile.profile.uploadPhoto"
+                  loading={busy === "avatar"}
+                  onPress={() => void chooseAvatar()}
+                  style={styles.avatarAction}
+                  variant="secondary"
+                />
+                {profile.hasAvatar ? (
+                  <AppButton
+                    disabled={Boolean(busy)}
+                    icon={<Trash2 color={colors.danger} size={18} />}
+                    label="mobile.profile.removePhoto"
+                    onPress={() => void removeAvatar()}
+                    style={styles.avatarAction}
+                    variant="destructive"
+                  />
+                ) : null}
               </View>
-            )}
-            <Text style={styles.email}>{profile.email}</Text>
-            <AppButton
-              label="mobile.profile.choosePhoto"
-              loading={busy === "avatar"}
-              onPress={() => void chooseAvatar()}
-              variant="secondary"
-            />
-            {profile.hasAvatar ? (
-              <AppButton
-                disabled={Boolean(busy)}
-                label="mobile.profile.removePhoto"
-                onPress={() => void removeAvatar()}
-                variant="danger"
+              <LocalizedText
+                messageKey="mobile.profile.avatarHint"
+                style={styles.avatarHint}
               />
-            ) : null}
-          </Panel>
-          <Panel style={styles.form}>
-            <LocalizedText messageKey="mobile.profile.accountDetails" style={styles.heading} />
-            <TextField
-              label="mobile.profile.name"
-              maxLength={100}
-              onChangeText={setName}
-              value={name}
-            />
-            <AppButton
-              disabled={!name.trim() || name.trim() === profile.name}
-              label="mobile.profile.saveName"
-              loading={busy === "name"}
-              onPress={() => void saveName()}
-            />
-          </Panel>
-          <Panel style={styles.form}>
-            <LocalizedText messageKey="mobile.profile.changePassword" style={styles.heading} />
-            <TextField
-              label="mobile.profile.currentPassword"
-              onChangeText={setCurrentPassword}
-              secureTextEntry
-              value={currentPassword}
-            />
-            <TextField
-              label="mobile.profile.newPassword"
-              onChangeText={setNewPassword}
-              secureTextEntry
-              value={newPassword}
-            />
-            <TextField
-              label="mobile.profile.confirmNewPassword"
-              onChangeText={setConfirmPassword}
-              secureTextEntry
-              value={confirmPassword}
-            />
-            <AppButton
-              disabled={!currentPassword || !newPassword || !confirmPassword}
-              label="mobile.profile.updatePassword"
-              loading={busy === "password"}
-              onPress={() => void changePassword()}
-              variant="secondary"
-            />
-            <AppButton
-              label="mobile.profile.forgotPassword"
-              onPress={() => router.push("/(auth)/forgot-password")}
-              variant="secondary"
-            />
-          </Panel>
-          <Panel style={styles.form}>
-            <LocalizedText messageKey="mobile.profile.yourLibrary" style={styles.heading} />
-            <AppButton
-              label="mobile.profile.manageCollections"
-              onPress={() => router.push("/collections")}
-              variant="secondary"
-            />
+            </View>
           </Panel>
           <Panel style={styles.form}>
             <LocalizedText messageKey="mobile.profile.preferences" style={styles.heading} />
@@ -319,17 +289,84 @@ export default function ProfileScreen() {
               selected={[theme]}
             />
           </Panel>
+          <Panel style={styles.form}>
+            <LocalizedText messageKey="mobile.profile.accountDetails" style={styles.heading} />
+            <TextField
+              label="mobile.profile.name"
+              maxLength={100}
+              onChangeText={setName}
+              value={name}
+            />
+            <View style={styles.emailField}>
+              <LocalizedText
+                messageKey="mobile.profile.email"
+                style={styles.emailLabel}
+              />
+              <Text style={styles.email}>{profile.email}</Text>
+              <LocalizedText
+                messageKey="mobile.profile.emailCannotChange"
+                style={styles.emailHint}
+              />
+            </View>
+            <AppButton
+              disabled={!name.trim() || name.trim() === profile.name}
+              label="mobile.profile.saveName"
+              loading={busy === "name"}
+              onPress={() => void saveName()}
+            />
+          </Panel>
+          <Panel style={styles.form}>
+            <LocalizedText messageKey="mobile.profile.changePassword" style={styles.heading} />
+            <TextField
+              label="mobile.profile.currentPassword"
+              onChangeText={setCurrentPassword}
+              secureTextEntry
+              value={currentPassword}
+            />
+            <TextField
+              label="mobile.profile.newPassword"
+              onChangeText={setNewPassword}
+              secureTextEntry
+              value={newPassword}
+            />
+            <TextField
+              label="mobile.profile.confirmNewPassword"
+              onChangeText={setConfirmPassword}
+              secureTextEntry
+              value={confirmPassword}
+            />
+            <AppButton
+              disabled={!currentPassword || !newPassword || !confirmPassword}
+              label="mobile.profile.updatePassword"
+              loading={busy === "password"}
+              onPress={() => void changePassword()}
+              variant="outline"
+            />
+            <AppButton
+              label="mobile.profile.forgotPassword"
+              onPress={() => router.push("/(auth)/forgot-password")}
+              variant="outline"
+            />
+          </Panel>
+          <Panel style={styles.form}>
+            <LocalizedText messageKey="mobile.profile.yourLibrary" style={styles.heading} />
+            <AppButton
+              label="mobile.profile.manageCollections"
+              onPress={() => router.push("/collections")}
+              variant="outline"
+            />
+          </Panel>
           <AppButton
             label="mobile.common.signOut"
             onPress={() => void signOut()}
-            variant="danger"
+            variant="destructive"
           />
         </>
       ) : (
         <AppButton
           label="mobile.common.tryAgain"
           onPress={() => void loadProfile()}
-          variant="secondary"
+          variant="outline"
         />
       )}
     </Screen>
@@ -337,23 +374,66 @@ export default function ProfileScreen() {
 }
 
 const createStyles = (colors: ThemeColors) => StyleSheet.create({
-  profilePanel: { alignItems: "center", gap: spacing.md },
+  profilePanel: { gap: spacing.md },
+  avatarContent: {
+    alignItems: "center",
+    gap: spacing.md,
+  },
+  avatarSectionTitle: {
+    color: colors.text,
+    fontSize: 17,
+    fontWeight: "700",
+  },
+  avatarActions: {
+    width: "100%",
+    flexDirection: "column",
+    alignItems: "stretch",
+    gap: spacing.sm,
+  },
+  avatarAction: {
+    width: "100%",
+    minHeight: 44,
+    paddingHorizontal: spacing.sm,
+  },
+  avatarHint: {
+    color: colors.muted,
+    fontSize: 12,
+    textAlign: "center",
+  },
+  emailField: { gap: spacing.sm },
+  emailLabel: { color: colors.text, fontSize: 14, fontWeight: "600" },
+  email: {
+    minHeight: 48,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.xl,
+    backgroundColor: colors.surface,
+    color: colors.text,
+    fontSize: 16,
+  },
+  emailHint: { color: colors.muted, fontSize: 13 },
   avatar: {
-    width: 104,
-    height: 104,
-    borderRadius: radius.pill,
+    width: 120,
+    height: 120,
+    borderWidth: 2,
+    borderColor: colors.border,
+    borderRadius: 60,
     backgroundColor: colors.primarySoft,
+    overflow: "hidden",
   },
   avatarPlaceholder: {
-    width: 104,
-    height: 104,
+    width: 120,
+    height: 120,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: radius.pill,
+    borderWidth: 2,
+    borderColor: colors.border,
     backgroundColor: colors.primarySoft,
   },
   avatarInitial: { color: colors.primary, fontSize: 40, fontWeight: "800" },
-  email: { color: colors.muted, fontSize: 14 },
   form: { gap: spacing.md },
   heading: { color: colors.text, fontSize: 17, fontWeight: "800" },
 });

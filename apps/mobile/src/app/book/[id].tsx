@@ -317,14 +317,14 @@ export default function BookDetailsScreen() {
                 setMetadata(null);
                 setError("");
               }}
-              variant="secondary"
+              variant="outline"
             />
           </>
         ) : (
           <AppButton
             label="mobile.book.editInformation"
             onPress={startMetadataEdit}
-            variant="secondary"
+            variant="outline"
           />
         )}
       </Panel>
@@ -371,7 +371,7 @@ export default function BookDetailsScreen() {
                 <AppButton
                   label="mobile.book.markRead"
                   onPress={() => changeStatus("read")}
-                  variant="secondary"
+                  variant="outline"
                 />
               </>
             ) : null}
@@ -422,7 +422,7 @@ export default function BookDetailsScreen() {
         <AppButton
           label="mobile.book.removeFromLibrary"
           onPress={confirmRemove}
-          variant="danger"
+          variant="destructive"
           disabled={busy}
         />
       </Panel>

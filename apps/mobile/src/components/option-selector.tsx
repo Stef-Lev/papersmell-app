@@ -7,6 +7,7 @@ import {
   Text as NativeText,
   View,
 } from "react-native";
+import { ChevronDown } from "lucide-react-native";
 import { LocalizedText as Text } from "./localized-text";
 import { AppButton } from "./app-button";
 import { Panel } from "./panel";
@@ -39,7 +40,7 @@ export function OptionSelector({
   emptyLabelKey?: MobileMessageKey;
 }) {
   const [visible, setVisible] = useState(false);
-  const { locale } = usePreferences();
+  const { colors, locale } = usePreferences();
   const styles = useThemedStyles(createStyles);
   const selectedLabels = options
     .filter((option) => selected.includes(option.value))
@@ -68,17 +69,20 @@ export function OptionSelector({
 
   return (
     <>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`${localizedLabel}: ${selectedLabel}`}
-        onPress={() => setVisible(true)}
-        style={styles.trigger}
-      >
-        <Text style={styles.triggerLabel}>{localizedLabel}</Text>
-        <NativeText numberOfLines={1} style={styles.triggerValue}>
-          {selectedLabel}
-        </NativeText>
-      </Pressable>
+      <View style={styles.field}>
+        <Text messageKey={labelKey} style={styles.label} />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`${localizedLabel}: ${selectedLabel}`}
+          onPress={() => setVisible(true)}
+          style={styles.trigger}
+        >
+          <NativeText numberOfLines={1} style={styles.triggerValue}>
+            {selectedLabel}
+          </NativeText>
+          <ChevronDown color={colors.muted} size={16} />
+        </Pressable>
+      </View>
       <Modal
         animationType="slide"
         onRequestClose={() => setVisible(false)}
@@ -118,7 +122,7 @@ export function OptionSelector({
                   onChange([]);
                   if (!multiple) setVisible(false);
                 }}
-                variant="secondary"
+                variant="outline"
               />
               <AppButton
                 label="mobile.selector.done"
@@ -133,36 +137,48 @@ export function OptionSelector({
 }
 
 const createStyles = (colors: ThemeColors) => StyleSheet.create({
+  field: { gap: spacing.sm },
+  label: { color: colors.text, fontSize: 14, fontWeight: "500" },
   trigger: {
     minHeight: 44,
-    gap: spacing.xs,
-    justifyContent: "center",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.md,
+    paddingVertical: 10,
     paddingHorizontal: spacing.md,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: radius.sm,
-    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
+    backgroundColor: colors.background,
   },
-  triggerLabel: { color: colors.muted, fontSize: 11, fontWeight: "700" },
-  triggerValue: { color: colors.text, fontSize: 14, fontWeight: "600" },
+  triggerValue: {
+    flex: 1,
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: "400",
+  },
   backdrop: {
     flex: 1,
     justifyContent: "flex-end",
     backgroundColor: "#00000066",
     padding: spacing.md,
   },
-  modal: { maxHeight: "82%", gap: spacing.md },
+  modal: { maxHeight: "82%", gap: spacing.md, borderRadius: radius.xl },
   title: { color: colors.text, fontSize: 20, fontWeight: "800" },
   options: { flexGrow: 0 },
   option: {
-    minHeight: 48,
+    minHeight: 40,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
+    borderRadius: radius.lg,
   },
-  optionLabel: { flex: 1, color: colors.text, fontSize: 15 },
+  optionLabel: { flex: 1, color: colors.text, fontSize: 14 },
   check: { width: 28, color: colors.primary, fontSize: 18, fontWeight: "800" },
   empty: { color: colors.muted, paddingVertical: spacing.lg },
   actions: { flexDirection: "row", gap: spacing.md },

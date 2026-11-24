@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { StyleSheet, TextInput, View } from "react-native";
 import type { KeyboardTypeOptions, TextInputProps } from "react-native";
 import { LocalizedText as Text } from "./localized-text";
@@ -47,6 +48,7 @@ export function TextField({
 }: Props) {
   const { colors, locale } = usePreferences();
   const styles = useThemedStyles(createStyles);
+  const [focused, setFocused] = useState(false);
   return (
     <View style={styles.field}>
       <Text messageKey={label} style={styles.label} values={labelValues} />
@@ -57,6 +59,8 @@ export function TextField({
         maxLength={maxLength}
         multiline={multiline}
         onChangeText={onChangeText}
+        onBlur={() => setFocused(false)}
+        onFocus={() => setFocused(true)}
         onSubmitEditing={onSubmitEditing}
         placeholder={
           placeholder
@@ -64,8 +68,14 @@ export function TextField({
             : undefined
         }
         placeholderTextColor={colors.muted}
+        selectionColor={colors.primary}
         secureTextEntry={secureTextEntry}
-        style={[styles.input, multiline && styles.multiline, error && styles.invalid]}
+        style={[
+          styles.input,
+          focused && !error && styles.focused,
+          multiline && styles.multiline,
+          error && styles.invalid,
+        ]}
         value={value}
       />
       {hint ? (
@@ -78,19 +88,21 @@ export function TextField({
 
 const createStyles = (colors: import("../lib/theme").ThemeColors) => StyleSheet.create({
   field: { gap: spacing.sm },
-  label: { color: colors.text, fontSize: 14, fontWeight: "600" },
-  hint: { color: colors.muted, fontSize: 13 },
+  label: { color: colors.text, fontSize: 14, fontWeight: "500" },
+  hint: { color: colors.muted, fontSize: 12 },
   input: {
-    minHeight: 48,
+    minHeight: 44,
+    paddingVertical: 10,
     paddingHorizontal: spacing.md,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: radius.sm,
-    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
+    backgroundColor: colors.background,
     color: colors.text,
     fontSize: 16,
   },
+  focused: { borderWidth: 2, borderColor: colors.focus },
   multiline: { minHeight: 112, paddingTop: spacing.md, textAlignVertical: "top" },
   invalid: { borderColor: colors.danger },
-  error: { color: colors.danger, fontSize: 13 },
+  error: { color: colors.danger, fontSize: 12 },
 });

@@ -61,5 +61,5 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   selected: { borderColor: colors.primary, backgroundColor: colors.primary },
   label: { color: colors.muted, fontSize: 13, fontWeight: "600" },
-  selectedLabel: { color: colors.white },
+  selectedLabel: { color: colors.primaryContrast },
 });

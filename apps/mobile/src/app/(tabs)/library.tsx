@@ -98,7 +98,7 @@ export default function LibraryScreen() {
       <AppButton
         label="mobile.library.manageCollections"
         onPress={() => router.push("/collections")}
-        variant="secondary"
+        variant="outline"
       />
       <TextField
         autoCapitalize="none"
