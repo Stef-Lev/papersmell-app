@@ -3,14 +3,22 @@ import type { KeyboardTypeOptions, TextInputProps } from "react-native";
 import { LocalizedText as Text } from "./localized-text";
 import { radius, spacing } from "../lib/theme";
 import { usePreferences } from "../providers/preferences-provider";
-import { translateText } from "../lib/translation";
+import {
+  translateMessage,
+  type MessageValues,
+  type MobileMessageKey,
+} from "../lib/translation";
 import { useThemedStyles } from "../lib/use-themed-styles";
 
 type Props = {
-  label: string;
+  label: MobileMessageKey;
+  labelValues?: MessageValues;
+  hint?: MobileMessageKey;
+  hintValues?: MessageValues;
   value: string;
   onChangeText: (value: string) => void;
-  placeholder?: string;
+  placeholder?: MobileMessageKey;
+  placeholderValues?: MessageValues;
   secureTextEntry?: boolean;
   keyboardType?: KeyboardTypeOptions;
   autoCapitalize?: TextInputProps["autoCapitalize"];
@@ -22,9 +30,13 @@ type Props = {
 
 export function TextField({
   label,
+  labelValues,
+  hint,
+  hintValues,
   value,
   onChangeText,
   placeholder,
+  placeholderValues,
   secureTextEntry,
   keyboardType,
   autoCapitalize = "sentences",
@@ -37,21 +49,28 @@ export function TextField({
   const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.field}>
-      <Text style={styles.label}>{label}</Text>
+      <Text messageKey={label} style={styles.label} values={labelValues} />
       <TextInput
-        accessibilityLabel={translateText(label, locale)}
+        accessibilityLabel={translateMessage(label, locale, labelValues)}
         autoCapitalize={autoCapitalize}
         keyboardType={keyboardType}
         maxLength={maxLength}
         multiline={multiline}
         onChangeText={onChangeText}
         onSubmitEditing={onSubmitEditing}
-        placeholder={placeholder ? translateText(placeholder, locale) : undefined}
+        placeholder={
+          placeholder
+            ? translateMessage(placeholder, locale, placeholderValues)
+            : undefined
+        }
         placeholderTextColor={colors.muted}
         secureTextEntry={secureTextEntry}
         style={[styles.input, multiline && styles.multiline, error && styles.invalid]}
         value={value}
       />
+      {hint ? (
+        <Text messageKey={hint} style={styles.hint} values={hintValues} />
+      ) : null}
       {error ? <Text style={styles.error}>{error}</Text> : null}
     </View>
   );
@@ -60,6 +79,7 @@ export function TextField({
 const createStyles = (colors: import("../lib/theme").ThemeColors) => StyleSheet.create({
   field: { gap: spacing.sm },
   label: { color: colors.text, fontSize: 14, fontWeight: "600" },
+  hint: { color: colors.muted, fontSize: 13 },
   input: {
     minHeight: 48,
     paddingHorizontal: spacing.md,

@@ -9,10 +9,13 @@ import { Panel } from "../components/panel";
 import { TextField } from "../components/text-field";
 import { mobileApi } from "../lib/api";
 import { spacing, type ThemeColors } from "../lib/theme";
+import { getErrorMessage, translateMessage } from "../lib/translation";
+import { usePreferences } from "../providers/preferences-provider";
 import { useThemedStyles } from "../lib/use-themed-styles";
 
 export default function ResetPasswordScreen() {
   const styles = useThemedStyles(createStyles);
+  const { locale } = usePreferences();
   const params = useLocalSearchParams<{ token?: string }>();
   const [token, setToken] = useState(
     typeof params.token === "string" ? params.token : "",
@@ -26,11 +29,11 @@ export default function ResetPasswordScreen() {
   async function submit() {
     if (!token.trim() || !password || busy) return;
     if (password !== confirmation) {
-      setError("The passwords do not match.");
+      setError(translateMessage("mobile.errors.passwordsMismatch", locale));
       return;
     }
     if (password.length < 6) {
-      setError("Password must be at least 6 characters.");
+      setError(translateMessage("mobile.errors.passwordMinLength", locale));
       return;
     }
     setBusy(true);
@@ -38,9 +41,9 @@ export default function ResetPasswordScreen() {
     setNotice("");
     try {
       await mobileApi.resetPassword(token.trim(), password);
-      setNotice("Password reset successfully. You can now sign in.");
+      setNotice(translateMessage("mobile.errors.passwordResetSuccess", locale));
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not reset your password.");
+      setError(getErrorMessage(cause, locale, "mobile.errors.resetPassword"));
     } finally {
       setBusy(false);
     }
@@ -49,46 +52,44 @@ export default function ResetPasswordScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.content}>
-        <Text style={styles.title}>Choose a new password</Text>
-        <Text style={styles.description}>
-          Paste the token from your reset email. Reset links expire after 10 minutes.
-        </Text>
+        <Text messageKey="mobile.auth.chooseNewPassword" style={styles.title} />
+        <Text messageKey="mobile.auth.resetTokenDescription" style={styles.description} />
         <Panel style={styles.form}>
           {error ? <Notice message={error} /> : null}
           {notice ? <Notice message={notice} variant="success" /> : null}
           <TextField
             autoCapitalize="none"
-            label="Reset token"
+            label="mobile.auth.resetToken"
             onChangeText={setToken}
             value={token}
           />
           <TextField
-            label="New password"
+            label="mobile.auth.newPassword"
             onChangeText={setPassword}
             secureTextEntry
             value={password}
           />
           <TextField
-            label="Confirm new password"
+            label="mobile.auth.confirmNewPassword"
             onChangeText={setConfirmation}
             secureTextEntry
             value={confirmation}
           />
           {notice ? (
             <AppButton
-              label="Go to sign in"
+              label="mobile.auth.goToSignIn"
               onPress={() => router.replace("/(auth)/login")}
             />
           ) : (
             <>
               <AppButton
                 disabled={!token.trim() || !password || !confirmation}
-                label="Reset password"
+                label="mobile.auth.resetPassword"
                 loading={busy}
                 onPress={() => void submit()}
               />
               <Pressable onPress={() => router.replace("/(auth)/login")} style={styles.link}>
-                <Text style={styles.linkText}>Back to sign in</Text>
+                <Text messageKey="mobile.auth.backToSignIn" style={styles.linkText} />
               </Pressable>
             </>
           )}

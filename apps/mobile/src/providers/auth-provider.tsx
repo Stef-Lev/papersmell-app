@@ -15,6 +15,11 @@ import {
 } from "../lib/auth-storage";
 import { mobileApi, setUnauthorizedHandler } from "../lib/api";
 import type { MobileSession } from "../lib/types";
+import {
+  getErrorMessage,
+  MobileMessageError,
+} from "../lib/translation";
+import { usePreferences } from "./preferences-provider";
 
 type AuthContextValue = {
   session: MobileSession | null;
@@ -29,6 +34,7 @@ type AuthContextValue = {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const { locale } = usePreferences();
   const [session, setSession] = useState<MobileSession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [authError, setAuthError] = useState("");
@@ -53,9 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .catch((cause: unknown) => {
         if (active) {
           setAuthError(
-            cause instanceof Error
-              ? cause.message
-              : "Could not read the saved sign-in.",
+            getErrorMessage(cause, locale, "mobile.errors.loadSavedSignIn"),
           );
         }
       })
@@ -65,7 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       active = false;
     };
-  }, []);
+  }, [locale]);
 
   useEffect(() => {
     setUnauthorizedHandler(expireSession);
@@ -94,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateUserName = useCallback(async (name: string) => {
     const stored = await readStoredSession();
-    if (!stored) throw new Error("Your sign-in has expired. Please sign in again.");
+    if (!stored) throw new MobileMessageError("mobile.errors.signInExpired");
     const updated = { ...stored, user: { ...stored.user, name } };
     await storeSession(updated);
     setSession(updated);

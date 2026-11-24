@@ -2,7 +2,7 @@ import { StyleSheet, View } from "react-native";
 import { LocalizedText as Text } from "./localized-text";
 import { radius, spacing } from "../lib/theme";
 import { usePreferences } from "../providers/preferences-provider";
-import { translateText } from "../lib/translation";
+import { translateMessage } from "../lib/translation";
 import { useThemedStyles } from "../lib/use-themed-styles";
 import type { ThemeColors } from "../lib/theme";
 
@@ -16,7 +16,11 @@ export function ProgressBar({
   const { locale } = usePreferences();
   const styles = useThemedStyles(createStyles);
   if (pageCount <= 0) {
-    return <Text style={styles.unknown}>{translateText(`Page ${currentPage}`, locale)}</Text>;
+    return (
+      <Text style={styles.unknown}>
+        {translateMessage("mobile.progress.page", locale, { page: currentPage })}
+      </Text>
+    );
   }
   const clampedPage = Math.min(Math.max(currentPage, 0), pageCount);
   const percentage = Math.round((clampedPage / pageCount) * 100);
@@ -24,12 +28,19 @@ export function ProgressBar({
     <View style={styles.container}>
       <View style={styles.labels}>
         <Text style={styles.label}>
-          {translateText(`Page ${clampedPage} of ${pageCount}`, locale)}
+          {translateMessage("mobile.progress.pageOf", locale, {
+            current: clampedPage,
+            total: pageCount,
+          })}
         </Text>
         <Text style={styles.percentage}>{percentage}%</Text>
       </View>
       <View
-        accessibilityLabel={translateText(`Reading progress: ${percentage}%`, locale)}
+        accessibilityLabel={translateMessage(
+          "mobile.accessibility.progress",
+          locale,
+          { percentage },
+        )}
         accessibilityRole="progressbar"
         accessibilityValue={{ min: 0, max: pageCount, now: clampedPage }}
         style={styles.track}

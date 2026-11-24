@@ -17,7 +17,9 @@ import { useLibrary } from "../../hooks/use-library";
 import { mobileApi } from "../../lib/api";
 import { spacing, type ThemeColors } from "../../lib/theme";
 import type { Shelf } from "../../lib/types";
+import { getErrorMessage, translateMessage } from "../../lib/translation";
 import { useThemedStyles } from "../../lib/use-themed-styles";
+import { usePreferences } from "../../providers/preferences-provider";
 
 function today() {
   return new Date().toISOString().slice(0, 10);
@@ -25,6 +27,7 @@ function today() {
 
 export default function BookDetailsScreen() {
   const styles = useThemedStyles(createStyles);
+  const { locale } = usePreferences();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { entries, collections, isLoading, error: libraryError, refresh } = useLibrary();
   const entry = entries.find((item) => item.id === id);
@@ -95,8 +98,10 @@ export default function BookDetailsScreen() {
     ) {
       setError(
         entry.book.pageCount > 0
-          ? `Current page must be from 0 to ${entry.book.pageCount}.`
-          : "Current page must be a non-negative whole number.",
+          ? translateMessage("mobile.errors.currentPageRange", locale, {
+              pageCount: entry.book.pageCount,
+            })
+          : translateMessage("mobile.errors.currentPageNonNegative", locale),
       );
       return;
     }
@@ -115,7 +120,7 @@ export default function BookDetailsScreen() {
       refresh();
       router.back();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not save your changes.");
+      setError(getErrorMessage(cause, locale, "mobile.errors.saveChanges"));
     } finally {
       setBusy(false);
     }
@@ -124,12 +129,14 @@ export default function BookDetailsScreen() {
   function confirmRemove() {
     if (!entry) return;
     Alert.alert(
-      "Remove book?",
-      `Remove “${entry.book.title}” from your library?`,
+      translateMessage("mobile.book.removeTitle", locale),
+      translateMessage("mobile.book.removeDescription", locale, {
+        title: entry.book.title,
+      }),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: translateMessage("mobile.common.cancel", locale), style: "cancel" },
         {
-          text: "Remove",
+          text: translateMessage("mobile.book.removeFromLibrary", locale),
           style: "destructive",
           onPress: () => {
             setBusy(true);
@@ -141,7 +148,7 @@ export default function BookDetailsScreen() {
               })
               .catch((cause: unknown) =>
                 setError(
-                  cause instanceof Error ? cause.message : "Could not remove this book.",
+                  getErrorMessage(cause, locale, "mobile.errors.removeBook"),
                 ),
               )
               .finally(() => setBusy(false));
@@ -154,9 +161,14 @@ export default function BookDetailsScreen() {
   if (isLoading) return <LoadingState />;
   if (!entry) {
     return (
-      <Screen title="Book details">
-        <Notice message={libraryError || "This book is not in your library."} />
-        <AppButton label="Back to library" onPress={() => router.back()} />
+      <Screen titleKey="mobile.book.details">
+        <Notice
+          message={
+            libraryError ||
+            translateMessage("mobile.book.notInLibrary", locale)
+          }
+        />
+        <AppButton label="mobile.book.backToLibrary" onPress={() => router.back()} />
       </Screen>
     );
   }
@@ -183,15 +195,15 @@ export default function BookDetailsScreen() {
       ? Number(metadataValues.pageCount)
       : 0;
     if (!metadataValues.title.trim()) {
-      setError("Enter a title for the book.");
+      setError(translateMessage("mobile.errors.bookTitleRequired", locale));
       return;
     }
     if (!Number.isInteger(pageCount) || pageCount < 0) {
-      setError("Page count must be a non-negative whole number.");
+      setError(translateMessage("mobile.errors.pageCountNonNegative", locale));
       return;
     }
     if (pageCount > 0 && entry.currentPage > pageCount) {
-      setError("Page count cannot be less than the current reading page.");
+      setError(translateMessage("mobile.errors.pageCountBelowCurrent", locale));
       return;
     }
     setBusy(true);
@@ -213,7 +225,13 @@ export default function BookDetailsScreen() {
       setMetadata(null);
       await refresh();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not update book information.");
+      setError(
+        getErrorMessage(
+          cause,
+          locale,
+          "mobile.errors.updateBookInformation",
+        ),
+      );
     } finally {
       setBusy(false);
     }
@@ -221,57 +239,79 @@ export default function BookDetailsScreen() {
   const status = values.status;
   const showDates = status === "currently-reading" || status === "read";
   return (
-    <Screen title={entry.book.title} subtitle={entry.book.authors.join(", ") || "Unknown author"}>
+    <Screen
+      title={entry.book.title}
+      subtitle={
+        entry.book.authors.join(", ") ||
+        translateMessage("mobile.common.unknownAuthor", locale)
+      }
+    >
       <Panel style={styles.bookPanel}>
         <BookCover url={entry.book.coverUrl} title={entry.book.title} />
         <View style={styles.bookFacts}>
           {entry.book.pageCount > 0 ? (
-            <Text style={styles.fact}>{entry.book.pageCount} pages</Text>
+            <Text style={styles.fact}>
+              {entry.book.pageCount}{" "}
+              {translateMessage("mobile.common.pages", locale)}
+            </Text>
           ) : null}
           {entry.book.categories.length ? (
             <Text style={styles.fact}>{entry.book.categories.join(", ")}</Text>
           ) : null}
-          {entry.book.isbn ? <Text style={styles.fact}>ISBN {entry.book.isbn}</Text> : null}
+          {entry.book.isbn ? (
+            <Text style={styles.fact}>
+              {translateMessage("mobile.book.isbnFact", locale, {
+                isbn: entry.book.isbn,
+              })}
+            </Text>
+          ) : null}
         </View>
       </Panel>
       <Panel style={styles.form}>
-        <LocalizedText style={styles.sectionTitle}>Book information</LocalizedText>
+        <LocalizedText
+          messageKey="mobile.book.information"
+          style={styles.sectionTitle}
+        />
         {editingMetadata ? (
           <>
             <TextField
-              label="Title"
+              label="mobile.book.title"
               maxLength={300}
               onChangeText={(title) => setMetadata({ ...metadataValues, title })}
               value={metadataValues.title}
             />
             <TextField
-              label="Author(s)"
+              label="mobile.book.authors"
               onChangeText={(authors) => setMetadata({ ...metadataValues, authors })}
-              placeholder="Separate multiple authors with commas"
+              placeholder="mobile.search.separateAuthors"
               value={metadataValues.authors}
             />
             <TextField
-              label="ISBN"
+              label="mobile.book.isbn"
               onChangeText={(isbn) => setMetadata({ ...metadataValues, isbn })}
               value={metadataValues.isbn}
             />
             <TextField
               keyboardType="number-pad"
-              label="Page count"
+              label="mobile.book.pageCount"
               onChangeText={(pageCount) => setMetadata({ ...metadataValues, pageCount })}
               value={metadataValues.pageCount}
             />
             <TextField
               autoCapitalize="none"
               keyboardType="url"
-              label="Cover image URL"
+              label="mobile.book.coverUrl"
               onChangeText={(coverUrl) => setMetadata({ ...metadataValues, coverUrl })}
               value={metadataValues.coverUrl}
             />
-            <AppButton label="Save book information" loading={busy} onPress={() => void saveMetadata()} />
+            <AppButton
+              label="mobile.book.saveInformation"
+              loading={busy}
+              onPress={() => void saveMetadata()}
+            />
             <AppButton
               disabled={busy}
-              label="Cancel"
+              label="mobile.common.cancel"
               onPress={() => {
                 setEditingMetadata(false);
                 setMetadata(null);
@@ -282,18 +322,17 @@ export default function BookDetailsScreen() {
           </>
         ) : (
           <AppButton
-            label="Edit book information"
+            label="mobile.book.editInformation"
             onPress={startMetadataEdit}
             variant="secondary"
           />
         )}
       </Panel>
       <Panel style={styles.form}>
-        <LocalizedText style={styles.sectionTitle}>Shelf</LocalizedText>
+        <LocalizedText messageKey="mobile.book.shelf" style={styles.sectionTitle} />
         <ShelfSelector onChange={(value) => value !== "all" && changeStatus(value)} value={status} />
         <OptionSelector
-          label="Collections"
-          localizeOptions={false}
+          labelKey="mobile.book.collections"
           onChange={(collectionIds) => updateDraft({ collectionIds })}
           options={collections.map(({ id: collectionId, name }) => ({
             value: collectionId,
@@ -309,7 +348,16 @@ export default function BookDetailsScreen() {
             />
             <TextField
               keyboardType="number-pad"
-              label={`Current page${entry.book.pageCount > 0 ? ` (of ${entry.book.pageCount})` : ""}`}
+              label={
+                entry.book.pageCount > 0
+                  ? "mobile.book.currentPageOf"
+                  : "mobile.book.currentPage"
+              }
+              labelValues={
+                entry.book.pageCount > 0
+                  ? { pageCount: entry.book.pageCount }
+                  : undefined
+              }
               onChangeText={(currentPage) => updateDraft({ currentPage })}
               value={values.currentPage}
             />
@@ -317,11 +365,11 @@ export default function BookDetailsScreen() {
             Number(values.currentPage) >= entry.book.pageCount ? (
               <>
                 <Notice
-                  message="You’ve reached the last page."
+                  messageKey="mobile.book.lastPageReached"
                   variant="success"
                 />
                 <AppButton
-                  label="Mark as read"
+                  label="mobile.book.markRead"
                   onPress={() => changeStatus("read")}
                   variant="secondary"
                 />
@@ -333,17 +381,17 @@ export default function BookDetailsScreen() {
           <>
             <TextField
               autoCapitalize="none"
-              label="Started (YYYY-MM-DD)"
+              label="mobile.book.startedDate"
               onChangeText={(startedAt) => updateDraft({ startedAt })}
-              placeholder="2026-01-31"
+              placeholder="mobile.book.datePlaceholder"
               value={values.startedAt}
             />
             {status === "read" ? (
               <TextField
                 autoCapitalize="none"
-                label="Finished (YYYY-MM-DD)"
+                label="mobile.book.finishedDate"
                 onChangeText={(finishedAt) => updateDraft({ finishedAt })}
-                placeholder="2026-01-31"
+                placeholder="mobile.book.datePlaceholder"
                 value={values.finishedAt}
               />
             ) : null}
@@ -356,19 +404,23 @@ export default function BookDetailsScreen() {
               value={values.rating}
             />
             <TextField
-              label="Review or notes"
+              label="mobile.book.reviewNotes"
               maxLength={5000}
               multiline
               onChangeText={(review) => updateDraft({ review })}
-              placeholder="What did you think?"
+              placeholder="mobile.book.reviewPlaceholder"
               value={values.review}
             />
           </>
         ) : null}
         {error ? <Notice message={error} /> : null}
-        <AppButton label="Save changes" loading={busy} onPress={() => void save()} />
         <AppButton
-          label="Remove from library"
+          label="mobile.book.saveChanges"
+          loading={busy}
+          onPress={() => void save()}
+        />
+        <AppButton
+          label="mobile.book.removeFromLibrary"
           onPress={confirmRemove}
           variant="danger"
           disabled={busy}

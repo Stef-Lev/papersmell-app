@@ -10,10 +10,13 @@ import { TextField } from "../components/text-field";
 import { useLibrary } from "../hooks/use-library";
 import { mobileApi } from "../lib/api";
 import { spacing, type ThemeColors } from "../lib/theme";
+import { getErrorMessage, translateMessage } from "../lib/translation";
 import { useThemedStyles } from "../lib/use-themed-styles";
+import { usePreferences } from "../providers/preferences-provider";
 
 export default function CollectionsScreen() {
   const styles = useThemedStyles(createStyles);
+  const { locale } = usePreferences();
   const { collections, isLoading, error, refresh } = useLibrary();
   const [newName, setNewName] = useState("");
   const [names, setNames] = useState<Record<string, string>>({});
@@ -29,9 +32,9 @@ export default function CollectionsScreen() {
       await mobileApi.createCollection(name);
       setNewName("");
       await refresh();
-      setNotice("Collection created.");
+      setNotice(translateMessage("mobile.collections.created", locale));
     } catch (cause) {
-      setNotice(cause instanceof Error ? cause.message : "Could not create collection.");
+      setNotice(getErrorMessage(cause, locale, "mobile.errors.collectionCreate"));
     } finally {
       setBusy("");
     }
@@ -45,9 +48,9 @@ export default function CollectionsScreen() {
     try {
       await mobileApi.renameCollection(id, name);
       await refresh();
-      setNotice("Collection renamed.");
+      setNotice(translateMessage("mobile.collections.renamed", locale));
     } catch (cause) {
-      setNotice(cause instanceof Error ? cause.message : "Could not rename collection.");
+      setNotice(getErrorMessage(cause, locale, "mobile.errors.collectionRename"));
     } finally {
       setBusy("");
     }
@@ -55,12 +58,12 @@ export default function CollectionsScreen() {
 
   function confirmDelete(id: string, name: string) {
     Alert.alert(
-      "Delete collection?",
-      `“${name}” will be deleted. Books in it will remain in your library.`,
+      translateMessage("mobile.collections.deleteTitle", locale),
+      translateMessage("mobile.collections.deleteDescription", locale, { name }),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: translateMessage("mobile.common.cancel", locale), style: "cancel" },
         {
-          text: "Delete",
+          text: translateMessage("mobile.collections.delete", locale),
           style: "destructive",
           onPress: () => {
             setBusy(id);
@@ -68,11 +71,11 @@ export default function CollectionsScreen() {
               .deleteCollection(id)
               .then(async () => {
                 await refresh();
-                setNotice("Collection deleted.");
+                setNotice(translateMessage("mobile.collections.deleted", locale));
               })
               .catch((cause: unknown) =>
                 setNotice(
-                  cause instanceof Error ? cause.message : "Could not delete collection.",
+                  getErrorMessage(cause, locale, "mobile.errors.collectionDelete"),
                 ),
               )
               .finally(() => setBusy(""));
@@ -84,20 +87,23 @@ export default function CollectionsScreen() {
 
   if (isLoading) return <LoadingState />;
   return (
-    <Screen title="Collections" subtitle="Group books into lists that make sense to you.">
+    <Screen
+      titleKey="mobile.collections.title"
+      subtitleKey="mobile.collections.subtitle"
+    >
       {error ? <Notice message={error} /> : null}
       {notice ? <Notice message={notice} variant="success" /> : null}
       <Panel style={styles.form}>
         <TextField
-          label="New collection"
+          label="mobile.collections.newCollection"
           maxLength={50}
           onChangeText={setNewName}
-          placeholder="e.g. Summer reading"
+          placeholder="mobile.collections.exampleName"
           value={newName}
         />
         <AppButton
           disabled={!newName.trim()}
-          label="Create collection"
+          label="mobile.collections.create"
           loading={busy === "create"}
           onPress={() => void createCollection()}
         />
@@ -106,7 +112,7 @@ export default function CollectionsScreen() {
         collections.map((collection) => (
           <Panel key={collection.id} style={styles.collection}>
             <TextField
-              label="Collection name"
+              label="mobile.collections.collectionName"
               maxLength={50}
               onChangeText={(name) =>
                 setNames((current) => ({ ...current, [collection.id]: name }))
@@ -119,7 +125,7 @@ export default function CollectionsScreen() {
                   !(names[collection.id] ?? collection.name).trim() ||
                   (names[collection.id] ?? collection.name) === collection.name
                 }
-                label="Save"
+                label="mobile.collections.save"
                 loading={busy === collection.id}
                 onPress={() => void renameCollection(collection.id)}
                 variant="secondary"
@@ -127,7 +133,7 @@ export default function CollectionsScreen() {
               />
               <AppButton
                 disabled={Boolean(busy)}
-                label="Delete"
+                label="mobile.collections.delete"
                 onPress={() => confirmDelete(collection.id, collection.name)}
                 variant="danger"
                 style={styles.action}
@@ -137,7 +143,10 @@ export default function CollectionsScreen() {
         ))
       ) : (
         <Panel>
-          <LocalizedText style={styles.empty}>You have not created any collections yet.</LocalizedText>
+          <LocalizedText
+            messageKey="mobile.collections.empty"
+            style={styles.empty}
+          />
         </Panel>
       )}
     </Screen>

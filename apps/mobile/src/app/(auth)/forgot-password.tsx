@@ -9,10 +9,13 @@ import { Panel } from "../../components/panel";
 import { TextField } from "../../components/text-field";
 import { mobileApi } from "../../lib/api";
 import { spacing, type ThemeColors } from "../../lib/theme";
+import { getErrorMessage } from "../../lib/translation";
+import { usePreferences } from "../../providers/preferences-provider";
 import { useThemedStyles } from "../../lib/use-themed-styles";
 
 export default function ForgotPasswordScreen() {
   const styles = useThemedStyles(createStyles);
+  const { locale } = usePreferences();
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -27,7 +30,7 @@ export default function ForgotPasswordScreen() {
       await mobileApi.requestPasswordReset(email.trim());
       setSent(true);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not request a reset link.");
+      setError(getErrorMessage(cause, locale, "mobile.errors.requestReset"));
     } finally {
       setBusy(false);
     }
@@ -36,36 +39,31 @@ export default function ForgotPasswordScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.content}>
-        <Text style={styles.title}>Reset your password</Text>
-        <Text style={styles.description}>
-          Enter your email address and we’ll send a time-limited password reset link.
-        </Text>
+        <Text messageKey="mobile.auth.resetTitle" style={styles.title} />
+        <Text messageKey="mobile.auth.resetDescription" style={styles.description} />
         <Panel style={styles.form}>
           {error ? <Notice message={error} /> : null}
           {sent ? (
-            <Notice
-              message="If an account exists for that email, a reset link has been sent. You can open it on the web or paste its token in the mobile reset screen."
-              variant="success"
-            />
+            <Notice messageKey="mobile.auth.resetSent" variant="success" />
           ) : null}
           <TextField
             autoCapitalize="none"
             keyboardType="email-address"
-            label="Email"
+            label="mobile.auth.email"
             onChangeText={setEmail}
             value={email}
           />
           <AppButton
             disabled={!email.trim()}
-            label="Send reset link"
+            label="mobile.auth.sendResetLink"
             loading={busy}
             onPress={() => void submit()}
           />
           <Pressable onPress={() => router.back()} style={styles.link}>
-            <Text style={styles.linkText}>Back to sign in</Text>
+            <Text messageKey="mobile.auth.backToSignIn" style={styles.linkText} />
           </Pressable>
           <Pressable onPress={() => router.push("/reset-password")} style={styles.link}>
-            <Text style={styles.linkText}>I have a reset token</Text>
+            <Text messageKey="mobile.auth.haveResetToken" style={styles.linkText} />
           </Pressable>
         </Panel>
       </View>

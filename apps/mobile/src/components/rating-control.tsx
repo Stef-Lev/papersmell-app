@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { LocalizedText as Text } from "./localized-text";
 import { radius, spacing } from "../lib/theme";
 import { usePreferences } from "../providers/preferences-provider";
-import { translateText } from "../lib/translation";
+import { translateMessage } from "../lib/translation";
 import { useThemedStyles } from "../lib/use-themed-styles";
 import type { ThemeColors } from "../lib/theme";
 
@@ -15,13 +15,18 @@ export function RatingControl({
 }) {
   const { locale } = usePreferences();
   const styles = useThemedStyles(createStyles);
-  const display = value === null ? "Not rated" : `${value.toFixed(1)} / 5`;
+  const display =
+    value === null
+      ? translateMessage("mobile.rating.notRated", locale)
+      : translateMessage("mobile.rating.value", locale, {
+          rating: value.toFixed(1),
+        });
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>Your rating</Text>
+      <Text messageKey="mobile.rating.label" style={styles.label} />
       <View style={styles.row}>
         <Pressable
-          accessibilityLabel={translateText("Decrease rating by half a star", locale)}
+          accessibilityLabel={translateMessage("mobile.rating.decrease", locale)}
           accessibilityRole="button"
           disabled={value === null || value <= 1}
           onPress={() => onChange(value === null ? null : Math.max(1, value - 0.5))}
@@ -33,7 +38,10 @@ export function RatingControl({
           {display}
         </Text>
         <Pressable
-          accessibilityLabel={translateText(value === null ? "Set rating to one star" : "Increase rating by half a star", locale)}
+          accessibilityLabel={translateMessage(
+            value === null ? "mobile.rating.setOne" : "mobile.rating.increase",
+            locale,
+          )}
           accessibilityRole="button"
           disabled={value !== null && value >= 5}
           onPress={() => onChange(value === null ? 1 : Math.min(5, value + 0.5))}
@@ -47,7 +55,7 @@ export function RatingControl({
             onPress={() => onChange(null)}
             style={styles.clear}
           >
-            <Text style={styles.clearLabel}>Clear</Text>
+            <Text messageKey="mobile.rating.clear" style={styles.clearLabel} />
           </Pressable>
         ) : null}
       </View>

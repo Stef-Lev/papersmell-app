@@ -11,12 +11,13 @@ import { OptionSelector } from "../../components/option-selector";
 import { Panel } from "../../components/panel";
 import { Screen } from "../../components/screen";
 import { getLibraryStats, getValidFinishedAt } from "../../lib/library-stats";
+import { getShelfMessageKey, translateMessage } from "../../lib/translation";
 import { spacing, type ThemeColors } from "../../lib/theme";
+import { shelves } from "../../lib/types";
 import { useLibrary } from "../../hooks/use-library";
 import { useMemo, useState } from "react";
 import { useThemedStyles } from "../../lib/use-themed-styles";
 import { usePreferences } from "../../providers/preferences-provider";
-import { translateText } from "../../lib/translation";
 
 export default function AnalyticsScreen() {
   const styles = useThemedStyles(createStyles);
@@ -107,22 +108,25 @@ export default function AnalyticsScreen() {
 
   if (isLoading) return <LoadingState />;
   return (
-    <Screen title="Reading insights" subtitle="A snapshot of your reading year.">
+    <Screen
+      bottomNavigation
+      titleKey="mobile.analytics.title"
+      subtitleKey="mobile.analytics.subtitle"
+    >
       {error ? <Notice message={error} /> : null}
       <View style={styles.filters}>
         <OptionSelector
-          label="Year"
+          labelKey="mobile.analytics.year"
           multiple={false}
           onChange={(values) => setSelectedYear(values[0] ?? String(currentYear))}
           options={[
-            { value: "all", label: "All time" },
+            { value: "all", messageKey: "mobile.analytics.allTime" },
             ...years.map((year) => ({ value: year, label: year })),
           ]}
           selected={[selectedYear]}
         />
         <OptionSelector
-          label="Collection"
-          localizeOptions={false}
+          labelKey="mobile.analytics.collection"
           multiple={false}
           onChange={setSelectedCollections}
           options={collections.map(({ id, name }) => ({ value: id, label: name }))}
@@ -130,44 +134,72 @@ export default function AnalyticsScreen() {
         />
       </View>
       <AppButton
-        label="Open reading calendar"
+        label="mobile.analytics.openCalendar"
         onPress={() => router.push("/calendar")}
         variant="secondary"
       />
       <View style={styles.metrics}>
         <MetricCard
-          label={
+          labelKey={
             selectedYear === "all"
-              ? "Books finished"
-              : `${translateText("Finished in", locale)} ${selectedYear}`
+              ? "mobile.analytics.booksFinished"
+              : "mobile.analytics.finishedIn"
+          }
+          labelValues={
+            selectedYear === "all" ? undefined : { year: selectedYear }
           }
           value={finishedEntries.length}
         />
         <MetricCard
-          label="Pages in finished books"
+          labelKey="mobile.analytics.pagesFinished"
           value={finishedPages.toLocaleString()}
         />
-        <MetricCard label="Average rating" value={averageRating} detail="out of 5" />
-        <MetricCard label="Library read" value={`${stats.readPercentage}%`} />
+        <MetricCard
+          labelKey="mobile.analytics.averageRating"
+          value={averageRating}
+          detailKey="mobile.analytics.outOfFive"
+        />
+        <MetricCard
+          labelKey="mobile.analytics.libraryRead"
+          value={`${stats.readPercentage}%`}
+        />
       </View>
       {missingPageCount || missingFinishDate ? (
         <Text style={styles.note}>
-          {missingPageCount
-            ? `${missingPageCount} finished ${missingPageCount === 1 ? "book has" : "books have"} no known page count. `
-            : ""}
-          {missingFinishDate
-            ? `${missingFinishDate} read ${missingFinishDate === 1 ? "book has" : "books have"} no valid finish date and ${missingFinishDate === 1 ? "is" : "are"} excluded from time-based totals.`
-            : ""}
+          {[
+            missingPageCount
+              ? translateMessage(
+                  missingPageCount === 1
+                    ? "mobile.analytics.missingPageCountOne"
+                    : "mobile.analytics.missingPageCountMany",
+                  locale,
+                  { count: missingPageCount },
+                )
+              : "",
+            missingFinishDate
+              ? translateMessage(
+                  missingFinishDate === 1
+                    ? "mobile.analytics.missingFinishDateOne"
+                    : "mobile.analytics.missingFinishDateMany",
+                  locale,
+                  { count: missingFinishDate },
+                )
+              : "",
+          ]
+            .filter(Boolean)
+            .join(" ")}
         </Text>
       ) : null}
       <Panel style={styles.panel}>
         <View style={styles.heading}>
           <Text style={styles.title}>
-            {selectedYear === "all" ? "Books finished by year" : "Books finished by month"}
+            {selectedYear === "all"
+              ? translateMessage("mobile.analytics.byYear", locale)
+              : translateMessage("mobile.analytics.byMonth", locale)}
           </Text>
           <Text style={styles.caption}>
             {selectedCollections.length
-              ? translateText("Selected collection", locale)
+              ? translateMessage("mobile.analytics.selectedCollection", locale)
               : selectedYear}
           </Text>
         </View>
@@ -186,28 +218,20 @@ export default function AnalyticsScreen() {
           </View>
         ))}
         <Text style={styles.note}>
-          Completion counts use the finish dates recorded on your books.
+          {translateMessage("mobile.analytics.completionDatesNote", locale)}
         </Text>
       </Panel>
       <Panel style={styles.panel}>
-        <Text style={styles.title}>Shelf overview</Text>
-        {Object.entries(stats.shelfCounts).map(([shelf, count]) => (
+        <Text messageKey="mobile.analytics.shelfOverview" style={styles.title} />
+        {shelves.map((shelf) => (
           <View key={shelf} style={styles.shelfRow}>
-            <Text style={styles.shelfLabel}>
-              {shelf === "to-read"
-                ? "To Read"
-                : shelf === "currently-reading"
-                  ? "Currently Reading"
-                  : shelf === "did-not-finish"
-                    ? "Did Not Finish"
-                    : "Read"}
-            </Text>
-            <Text style={styles.monthCount}>{count}</Text>
+            <Text messageKey={getShelfMessageKey(shelf)} style={styles.shelfLabel} />
+            <Text style={styles.monthCount}>{stats.shelfCounts[shelf]}</Text>
           </View>
         ))}
       </Panel>
       <Panel style={styles.panel}>
-        <Text style={styles.title}>Your highest rated</Text>
+        <Text messageKey="mobile.analytics.highestRated" style={styles.title} />
         {stats.topRated.length ? (
           stats.topRated.map((entry) => (
             <BookCard
@@ -218,8 +242,8 @@ export default function AnalyticsScreen() {
           ))
         ) : (
           <EmptyState
-            title="No ratings yet"
-            description="Rate a finished book to see it here."
+            titleKey="mobile.analytics.noRatings"
+            descriptionKey="mobile.analytics.rateBookDescription"
           />
         )}
       </Panel>

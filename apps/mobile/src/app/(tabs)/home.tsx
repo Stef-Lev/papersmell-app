@@ -14,8 +14,9 @@ import { spacing, type ThemeColors } from "../../lib/theme";
 import { useThemedStyles } from "../../lib/use-themed-styles";
 import { useAuth } from "../../providers/auth-provider";
 import { useLibrary } from "../../hooks/use-library";
+import { getShelfMessageKey, translateMessage } from "../../lib/translation";
+import { shelves } from "../../lib/types";
 import { usePreferences } from "../../providers/preferences-provider";
-import { translateText } from "../../lib/translation";
 
 export default function HomeScreen() {
   const styles = useThemedStyles(createStyles);
@@ -28,50 +29,45 @@ export default function HomeScreen() {
   if (isLoading) return <LoadingState />;
   return (
     <Screen
-      title={translateText(
-        `Hello, ${session?.user.name.split(" ")[0] || "reader"}.`,
-        locale,
-      )}
-      subtitle="A little space for the books you love."
+      bottomNavigation
+      titleKey="mobile.home.greeting"
+      titleValues={{
+        name:
+          session?.user.name.split(" ")[0] ||
+          translateMessage("mobile.home.reader", locale),
+      }}
+      subtitleKey="mobile.home.subtitle"
     >
       {error ? (
         <Panel>
           <Notice message={error} />
-          <AppButton label="Try again" onPress={refresh} variant="secondary" />
+          <AppButton label="mobile.home.tryAgain" onPress={refresh} variant="secondary" />
         </Panel>
       ) : null}
       <View style={styles.metrics}>
-        <MetricCard label="In your library" value={stats.total} />
-        <MetricCard label="Marked read" value={`${stats.readPercentage}%`} />
+        <MetricCard labelKey="mobile.home.inLibrary" value={stats.total} />
+        <MetricCard labelKey="mobile.home.markedRead" value={`${stats.readPercentage}%`} />
       </View>
       <Panel style={styles.overview}>
         <View style={styles.sectionHeading}>
-          <Text style={styles.sectionTitle}>Your shelves</Text>
-          <Text style={styles.sectionCaption}>A snapshot of your library</Text>
+          <Text messageKey="mobile.home.yourShelves" style={styles.sectionTitle} />
+          <Text messageKey="mobile.home.shelfSnapshot" style={styles.sectionCaption} />
         </View>
-        {Object.entries(stats.shelfCounts).map(([shelf, count]) => (
+        {shelves.map((shelf) => (
           <View key={shelf} style={styles.shelfRow}>
-            <Text style={styles.shelfLabel}>
-              {shelf === "to-read"
-                ? "To Read"
-                : shelf === "currently-reading"
-                  ? "Currently Reading"
-                  : shelf === "did-not-finish"
-                    ? "Did Not Finish"
-                    : "Read"}
-            </Text>
-            <Text style={styles.shelfCount}>{count}</Text>
+            <Text messageKey={getShelfMessageKey(shelf)} style={styles.shelfLabel} />
+            <Text style={styles.shelfCount}>{stats.shelfCounts[shelf]}</Text>
           </View>
         ))}
         <AppButton
-          label="Open my library"
+          label="mobile.home.openLibrary"
           onPress={() => router.push("/(tabs)/library")}
           variant="secondary"
         />
       </Panel>
       <View style={styles.sectionHeading}>
-        <Text style={styles.sectionTitle}>Currently reading</Text>
-        <Text style={styles.sectionCaption}>Pick up where you left off</Text>
+        <Text messageKey="mobile.home.currentlyReading" style={styles.sectionTitle} />
+        <Text messageKey="mobile.home.pickUpReading" style={styles.sectionCaption} />
       </View>
       {reading.length ? (
         reading.slice(0, 3).map((entry) => (
@@ -87,11 +83,11 @@ export default function HomeScreen() {
       ) : (
         <Panel>
           <EmptyState
-            title="Nothing on your reading desk yet"
-            description="Choose a book from your library or discover something new."
+            titleKey="mobile.home.emptyReading"
+            descriptionKey="mobile.home.emptyReadingDescription"
           />
           <AppButton
-            label="Find a book"
+            label="mobile.home.findBook"
             onPress={() => router.push("/(tabs)/search")}
           />
         </Panel>

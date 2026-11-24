@@ -3,20 +3,23 @@ import { LocalizedText as Text } from "./localized-text";
 import { spacing } from "../lib/theme";
 import { useThemedStyles } from "../lib/use-themed-styles";
 import type { ThemeColors } from "../lib/theme";
+import type { MobileMessageKey } from "../lib/translation";
 
 export function EmptyState({
-  title,
-  description,
+  titleKey,
+  descriptionKey,
 }: {
-  title: string;
-  description?: string;
+  titleKey: MobileMessageKey;
+  descriptionKey?: MobileMessageKey;
 }) {
   const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.container}>
       <Text style={styles.mark}>P</Text>
-      <Text style={styles.title}>{title}</Text>
-      {description ? <Text style={styles.description}>{description}</Text> : null}
+      <Text messageKey={titleKey} style={styles.title} />
+      {descriptionKey ? (
+        <Text messageKey={descriptionKey} style={styles.description} />
+      ) : null}
     </View>
   );
 }

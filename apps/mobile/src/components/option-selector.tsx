@@ -12,41 +12,46 @@ import { AppButton } from "./app-button";
 import { Panel } from "./panel";
 import { radius, spacing } from "../lib/theme";
 import { usePreferences } from "../providers/preferences-provider";
-import { translateText } from "../lib/translation";
+import {
+  translateMessage,
+  type MobileMessageKey,
+} from "../lib/translation";
 import { useThemedStyles } from "../lib/use-themed-styles";
 import type { ThemeColors } from "../lib/theme";
 
-export type SelectOption = { value: string; label: string };
+export type SelectOption =
+  | { value: string; label: string; messageKey?: never }
+  | { value: string; label?: never; messageKey: MobileMessageKey };
 
 export function OptionSelector({
-  label,
+  labelKey,
   options,
   selected,
   onChange,
   multiple = true,
-  emptyLabel = "Any",
-  localizeOptions = true,
+  emptyLabelKey = "mobile.common.any",
 }: {
-  label: string;
+  labelKey: MobileMessageKey;
   options: readonly SelectOption[];
   selected: string[];
   onChange: (values: string[]) => void;
   multiple?: boolean;
-  emptyLabel?: string;
-  localizeOptions?: boolean;
+  emptyLabelKey?: MobileMessageKey;
 }) {
   const [visible, setVisible] = useState(false);
   const { locale } = usePreferences();
   const styles = useThemedStyles(createStyles);
   const selectedLabels = options
     .filter((option) => selected.includes(option.value))
-    .map((option) => option.label);
+    .map((option) =>
+      option.messageKey
+        ? translateMessage(option.messageKey, locale)
+        : option.label,
+    );
   const selectedLabel = selectedLabels.length
-    ? selectedLabels
-        .map((value) => localizeOptions ? translateText(value, locale) : value)
-        .join(", ")
-    : translateText(emptyLabel, locale);
-  const localizedLabel = translateText(label, locale);
+    ? selectedLabels.join(", ")
+    : translateMessage(emptyLabelKey, locale);
+  const localizedLabel = translateMessage(labelKey, locale);
 
   function toggle(value: string) {
     if (!multiple) {
@@ -82,10 +87,13 @@ export function OptionSelector({
       >
         <View style={styles.backdrop}>
           <Panel style={styles.modal}>
-            <Text style={styles.title}>{label}</Text>
+            <Text messageKey={labelKey} style={styles.title} />
             <ScrollView style={styles.options}>
               {options.map((option) => {
                 const isSelected = selected.includes(option.value);
+                const optionLabel = option.messageKey
+                  ? translateMessage(option.messageKey, locale)
+                  : option.label;
                 return (
                   <Pressable
                     accessibilityRole="checkbox"
@@ -94,29 +102,28 @@ export function OptionSelector({
                     onPress={() => toggle(option.value)}
                     style={styles.option}
                   >
-                    {localizeOptions ? (
-                      <Text style={styles.optionLabel}>{option.label}</Text>
-                    ) : (
-                      <NativeText style={styles.optionLabel}>{option.label}</NativeText>
-                    )}
+                    <NativeText style={styles.optionLabel}>{optionLabel}</NativeText>
                     <Text style={styles.check}>{isSelected ? "✓" : ""}</Text>
                   </Pressable>
                 );
               })}
               {options.length === 0 ? (
-                <Text style={styles.empty}>No options available yet.</Text>
+                <Text messageKey="mobile.selector.noOptions" style={styles.empty} />
               ) : null}
             </ScrollView>
             <View style={styles.actions}>
               <AppButton
-                label="Clear"
+                label="mobile.selector.clear"
                 onPress={() => {
                   onChange([]);
                   if (!multiple) setVisible(false);
                 }}
                 variant="secondary"
               />
-              <AppButton label="Done" onPress={() => setVisible(false)} />
+              <AppButton
+                label="mobile.selector.done"
+                onPress={() => setVisible(false)}
+              />
             </View>
           </Panel>
         </View>

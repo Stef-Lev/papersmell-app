@@ -17,6 +17,7 @@ import type { MobileProfile } from "../../lib/types";
 import { usePreferences } from "../../providers/preferences-provider";
 import { useThemedStyles } from "../../lib/use-themed-styles";
 import type { ThemeColors } from "../../lib/theme";
+import { getErrorMessage, translateMessage } from "../../lib/translation";
 
 type AvatarSource = { uri: string; headers: Record<string, string> };
 
@@ -49,11 +50,11 @@ export default function ProfileScreen() {
       setProfile(current);
       setName(current.name);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not load your profile.");
+      setError(getErrorMessage(cause, locale, "mobile.errors.loadProfile"));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [locale]);
 
   useFocusEffect(
     useCallback(() => {
@@ -75,13 +76,13 @@ export default function ProfileScreen() {
       })
       .catch((cause: unknown) => {
         if (active) {
-          setError(cause instanceof Error ? cause.message : "Could not load your profile photo.");
+          setError(getErrorMessage(cause, locale, "mobile.errors.loadProfilePhoto"));
         }
       });
     return () => {
       active = false;
     };
-  }, [profile?.avatarVersion, profile?.hasAvatar]);
+  }, [locale, profile?.avatarVersion, profile?.hasAvatar]);
 
   async function saveName() {
     if (!name.trim() || busy) return;
@@ -93,9 +94,9 @@ export default function ProfileScreen() {
       await updateUserName(updated.name);
       setProfile(updated);
       setName(updated.name);
-      setNotice("Profile updated.");
+      setNotice(translateMessage("mobile.profile.profileUpdated", locale));
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not update your profile.");
+      setError(getErrorMessage(cause, locale, "mobile.errors.updateProfile"));
     } finally {
       setBusy("");
     }
@@ -104,11 +105,11 @@ export default function ProfileScreen() {
   async function changePassword() {
     if (!currentPassword || !newPassword || busy) return;
     if (newPassword !== confirmPassword) {
-      setError("The new passwords do not match.");
+      setError(translateMessage("mobile.errors.newPasswordsMismatch", locale));
       return;
     }
     if (newPassword.length < 8) {
-      setError("Your new password must be at least 8 characters.");
+      setError(translateMessage("mobile.errors.newPasswordMinLength", locale));
       return;
     }
     setBusy("password");
@@ -119,9 +120,9 @@ export default function ProfileScreen() {
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-      setNotice("Password changed.");
+      setNotice(translateMessage("mobile.profile.passwordChanged", locale));
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not change your password.");
+      setError(getErrorMessage(cause, locale, "mobile.errors.changePassword"));
     } finally {
       setBusy("");
     }
@@ -138,7 +139,7 @@ export default function ProfileScreen() {
         quality: 0.9,
       });
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not open the photo library.");
+      setError(getErrorMessage(cause, locale, "mobile.errors.openPhotoLibrary"));
       return;
     }
     if (result.canceled) return;
@@ -156,9 +157,9 @@ export default function ProfileScreen() {
           ? { ...current, hasAvatar: true, avatarVersion: uploaded.avatarVersion }
           : current,
       );
-      setNotice("Profile photo updated.");
+      setNotice(translateMessage("mobile.profile.photoUpdated", locale));
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not upload your profile photo.");
+      setError(getErrorMessage(cause, locale, "mobile.errors.uploadProfilePhoto"));
     } finally {
       setBusy("");
     }
@@ -174,9 +175,9 @@ export default function ProfileScreen() {
           ? { ...current, hasAvatar: false, avatarVersion: "" }
           : current,
       );
-      setNotice("Profile photo removed.");
+      setNotice(translateMessage("mobile.profile.photoRemoved", locale));
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not remove your profile photo.");
+      setError(getErrorMessage(cause, locale, "mobile.errors.removeProfilePhoto"));
     } finally {
       setBusy("");
     }
@@ -184,7 +185,11 @@ export default function ProfileScreen() {
 
   if (loading) return <LoadingState />;
   return (
-    <Screen title="Your profile" subtitle="Manage your account and preferences.">
+    <Screen
+      bottomNavigation
+      titleKey="mobile.profile.title"
+      subtitleKey="mobile.profile.subtitle"
+    >
       {error ? <Notice message={error} /> : null}
       {preferencesError ? <Notice message={preferencesError} /> : null}
       {notice ? <Notice message={notice} variant="success" /> : null}
@@ -193,7 +198,7 @@ export default function ProfileScreen() {
           <Panel style={styles.profilePanel}>
             {profile.hasAvatar && avatarSource ? (
               <Image
-                alt="Profile photo"
+                alt={translateMessage("mobile.profile.profilePhoto", locale)}
                 source={avatarSource}
                 style={styles.avatar}
               />
@@ -204,7 +209,7 @@ export default function ProfileScreen() {
             )}
             <Text style={styles.email}>{profile.email}</Text>
             <AppButton
-              label="Choose profile photo"
+              label="mobile.profile.choosePhoto"
               loading={busy === "avatar"}
               onPress={() => void chooseAvatar()}
               variant="secondary"
@@ -212,107 +217,120 @@ export default function ProfileScreen() {
             {profile.hasAvatar ? (
               <AppButton
                 disabled={Boolean(busy)}
-                label="Remove photo"
+                label="mobile.profile.removePhoto"
                 onPress={() => void removeAvatar()}
                 variant="danger"
               />
             ) : null}
           </Panel>
           <Panel style={styles.form}>
-            <LocalizedText style={styles.heading}>Account details</LocalizedText>
-            <TextField label="Name" maxLength={100} onChangeText={setName} value={name} />
+            <LocalizedText messageKey="mobile.profile.accountDetails" style={styles.heading} />
+            <TextField
+              label="mobile.profile.name"
+              maxLength={100}
+              onChangeText={setName}
+              value={name}
+            />
             <AppButton
               disabled={!name.trim() || name.trim() === profile.name}
-              label="Save name"
+              label="mobile.profile.saveName"
               loading={busy === "name"}
               onPress={() => void saveName()}
             />
           </Panel>
           <Panel style={styles.form}>
-            <LocalizedText style={styles.heading}>Change password</LocalizedText>
+            <LocalizedText messageKey="mobile.profile.changePassword" style={styles.heading} />
             <TextField
-              label="Current password"
+              label="mobile.profile.currentPassword"
               onChangeText={setCurrentPassword}
               secureTextEntry
               value={currentPassword}
             />
             <TextField
-              label="New password"
+              label="mobile.profile.newPassword"
               onChangeText={setNewPassword}
               secureTextEntry
               value={newPassword}
             />
             <TextField
-              label="Confirm new password"
+              label="mobile.profile.confirmNewPassword"
               onChangeText={setConfirmPassword}
               secureTextEntry
               value={confirmPassword}
             />
             <AppButton
               disabled={!currentPassword || !newPassword || !confirmPassword}
-              label="Update password"
+              label="mobile.profile.updatePassword"
               loading={busy === "password"}
               onPress={() => void changePassword()}
               variant="secondary"
             />
             <AppButton
-              label="Forgot password?"
+              label="mobile.profile.forgotPassword"
               onPress={() => router.push("/(auth)/forgot-password")}
               variant="secondary"
             />
           </Panel>
           <Panel style={styles.form}>
-            <LocalizedText style={styles.heading}>Your library</LocalizedText>
+            <LocalizedText messageKey="mobile.profile.yourLibrary" style={styles.heading} />
             <AppButton
-              label="Manage collections"
+              label="mobile.profile.manageCollections"
               onPress={() => router.push("/collections")}
               variant="secondary"
             />
           </Panel>
           <Panel style={styles.form}>
-            <LocalizedText style={styles.heading}>Preferences</LocalizedText>
+            <LocalizedText messageKey="mobile.profile.preferences" style={styles.heading} />
             <OptionSelector
-              label="Language"
+              labelKey="mobile.profile.language"
               multiple={false}
               onChange={(values) => {
                 const value = values[0];
                 if (value === "en" || value === "el") {
                   setError("");
                   void setLocale(value).catch((cause: unknown) => {
-                    setError(cause instanceof Error ? cause.message : "Could not save your language preference.");
+                    setError(getErrorMessage(cause, locale, "mobile.errors.saveLanguage"));
                   });
                 }
               }}
               options={[
-                { value: "en", label: "English" },
-                { value: "el", label: "Greek" },
+                { value: "en", messageKey: "mobile.profile.english" },
+                { value: "el", messageKey: "mobile.profile.greek" },
               ]}
               selected={[locale]}
             />
             <OptionSelector
-              label="Appearance"
+              labelKey="mobile.profile.appearance"
               multiple={false}
               onChange={(values) => {
                 const value = values[0];
                 if (value === "system" || value === "light" || value === "dark") {
                   setError("");
                   void setTheme(value).catch((cause: unknown) => {
-                    setError(cause instanceof Error ? cause.message : "Could not save your appearance preference.");
+                    setError(getErrorMessage(cause, locale, "mobile.errors.saveAppearance"));
                   });
                 }
               }}
               options={[
-                { value: "system", label: "System" },
-                { value: "light", label: "Light" },
-                { value: "dark", label: "Dark" },
+                { value: "system", messageKey: "mobile.profile.system" },
+                { value: "light", messageKey: "mobile.profile.light" },
+                { value: "dark", messageKey: "mobile.profile.dark" },
               ]}
               selected={[theme]}
             />
           </Panel>
-          <AppButton label="Sign out" onPress={() => void signOut()} variant="danger" />
+          <AppButton
+            label="mobile.common.signOut"
+            onPress={() => void signOut()}
+            variant="danger"
+          />
         </>
       ) : (
-        <AppButton label="Try again" onPress={() => void loadProfile()} variant="secondary" />
+        <AppButton
+          label="mobile.common.tryAgain"
+          onPress={() => void loadProfile()}
+          variant="secondary"
+        />
       )}
     </Screen>
   );

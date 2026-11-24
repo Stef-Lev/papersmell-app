@@ -16,10 +16,17 @@ import { mobileApi } from "../../lib/api";
 import { spacing, type ThemeColors } from "../../lib/theme";
 import type { CatalogBook, Shelf } from "../../lib/types";
 import { useLibrary } from "../../hooks/use-library";
+import {
+  getErrorMessage,
+  getShelfMessageKey,
+  translateMessage,
+} from "../../lib/translation";
 import { useThemedStyles } from "../../lib/use-themed-styles";
+import { usePreferences } from "../../providers/preferences-provider";
 
 export default function SearchScreen() {
   const styles = useThemedStyles(createStyles);
+  const { locale } = usePreferences();
   const { collections } = useLibrary();
   const [query, setQuery] = useState("");
   const [shelf, setShelf] = useState<Shelf>("to-read");
@@ -43,10 +50,10 @@ export default function SearchScreen() {
       const response = await mobileApi.searchBooks(trimmedQuery);
       setResults(response.results);
       if (!response.results.length) {
-        setMessage("No results found. You can add the book manually below.");
+        setMessage(translateMessage("mobile.search.noResults", locale));
       }
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not search the catalog.");
+      setError(getErrorMessage(cause, locale, "mobile.errors.searchCatalog"));
     } finally {
       setSearching(false);
     }
@@ -59,11 +66,16 @@ export default function SearchScreen() {
     setMessage("");
     try {
       await mobileApi.addBook(book, shelf, collectionIds);
-      setMessage(`Added “${book.title}” to ${shelf.replaceAll("-", " ")}.`);
+      setMessage(
+        translateMessage("mobile.search.addedBook", locale, {
+          title: book.title,
+          shelf: translateMessage(getShelfMessageKey(shelf), locale),
+        }),
+      );
       setResults((current) => current.filter((result) => result.externalId !== book.externalId));
       return true;
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not add this book.");
+      setError(getErrorMessage(cause, locale, "mobile.errors.addBook"));
       return false;
     } finally {
       setAddingId("");
@@ -79,11 +91,11 @@ export default function SearchScreen() {
   }) {
     const pageCount = values.pageCount.trim() ? Number(values.pageCount) : 0;
     if (!values.title.trim()) {
-      setError("Enter a title for the book.");
+      setError(translateMessage("mobile.errors.bookTitleRequired", locale));
       return;
     }
     if (!Number.isInteger(pageCount) || pageCount < 0) {
-      setError("Page count must be a whole number greater than or equal to zero.");
+      setError(translateMessage("mobile.errors.pageCountWholeNumber", locale));
       return;
     }
     const book: CatalogBook = {
@@ -99,28 +111,29 @@ export default function SearchScreen() {
 
   return (
     <Screen
-      title="Find your next read"
-      subtitle="Search the catalog or add a book that isn't listed."
+      bottomNavigation
+      titleKey="mobile.search.title"
+      subtitleKey="mobile.search.subtitle"
     >
       <Panel style={styles.searchPanel}>
         <TextField
           autoCapitalize="none"
-          label="Title, author, or ISBN"
+          label="mobile.search.titleAuthorIsbn"
           onChangeText={setQuery}
           onSubmitEditing={() => void search()}
-          placeholder="Try a title or ISBN"
+          placeholder="mobile.search.tryTitleIsbn"
           value={query}
         />
         <View style={styles.searchActions}>
           <AppButton
             disabled={query.trim().length < 2}
-            label="Search books"
+            label="mobile.search.searchBooks"
             loading={searching}
             onPress={() => void search()}
             style={styles.searchButton}
           />
           <AppButton
-            label="Scan ISBN"
+            label="mobile.search.scanIsbn"
             onPress={() => setShowScanner(true)}
             variant="secondary"
             style={styles.searchButton}
@@ -128,7 +141,7 @@ export default function SearchScreen() {
         </View>
       </Panel>
       <View style={styles.shelfSection}>
-        <Text style={styles.sectionTitle}>Add to shelf</Text>
+        <Text messageKey="mobile.search.addToShelf" style={styles.sectionTitle} />
         <ShelfSelector
           onChange={(value) => {
             if (value !== "all") setShelf(value);
@@ -136,14 +149,13 @@ export default function SearchScreen() {
           value={shelf}
         />
         <OptionSelector
-          label="Add to collection"
-          localizeOptions={false}
+          labelKey="mobile.search.addToCollection"
           onChange={setCollectionIds}
           options={collections.map(({ id, name }) => ({ value: id, label: name }))}
           selected={collectionIds}
         />
         <AppButton
-          label="Manage collections"
+          label="mobile.library.manageCollections"
           onPress={() => router.push("/collections")}
           variant="secondary"
         />
@@ -162,12 +174,16 @@ export default function SearchScreen() {
       {message ? <Notice message={message} variant="success" /> : null}
       {results.length ? (
         <View style={styles.results}>
-          <Text style={styles.sectionTitle}>Search results</Text>
+          <Text messageKey="mobile.search.searchResults" style={styles.sectionTitle} />
           {results.map((book, index) => {
             const key = book.externalId ?? `${book.title}-${index}`;
             return (
               <BookCard
-                actionLabel={addingId === key ? "Adding…" : "Add to library"}
+                actionLabel={
+                  addingId === key
+                    ? "mobile.search.adding"
+                    : "mobile.search.addToLibrary"
+                }
                 book={book}
                 key={key}
                 onPress={() => void addBook(book, key)}
@@ -179,14 +195,14 @@ export default function SearchScreen() {
       {!results.length && !message && !searching ? (
         <Panel>
           <EmptyState
-            title="A good book is out there"
-            description="Search by title, author, or ISBN to see catalog results."
+            titleKey="mobile.search.emptyTitle"
+            descriptionKey="mobile.search.emptyDescription"
           />
         </Panel>
       ) : null}
       <Panel style={styles.manualPanel}>
-        <Text style={styles.sectionTitle}>Can’t find it?</Text>
-        <Text style={styles.description}>Add the book details yourself.</Text>
+        <Text messageKey="mobile.search.cannotFind" style={styles.sectionTitle} />
+        <Text messageKey="mobile.search.manualDescription" style={styles.description} />
         {showManual ? (
           <ManualBookForm
             busy={addingId === "manual"}
@@ -201,7 +217,7 @@ export default function SearchScreen() {
           />
         ) : (
           <AppButton
-            label="Add a book manually"
+            label="mobile.search.manualAdd"
             onPress={() => setShowManual(true)}
             variant="secondary"
           />
@@ -235,38 +251,46 @@ function ManualBookForm({
 
   return (
     <View style={styles.manualForm}>
-      <TextField label="Title" onChangeText={setTitle} value={title} />
       <TextField
-        label="Author(s)"
+        label="mobile.search.titleField"
+        onChangeText={setTitle}
+        value={title}
+      />
+      <TextField
+        label="mobile.search.authors"
         onChangeText={setAuthors}
-        placeholder="Separate multiple authors with commas"
+        placeholder="mobile.search.separateAuthors"
         value={authors}
       />
       <TextField
         keyboardType="number-pad"
-        label="Page count"
+        label="mobile.search.pageCount"
         onChangeText={setPageCount}
         value={pageCount}
       />
       <TextField
-        label="Categories"
+        label="mobile.search.categories"
         onChangeText={setCategories}
-        placeholder="Separate categories with commas"
+        placeholder="mobile.search.separateCategories"
         value={categories}
       />
       <TextField
         autoCapitalize="none"
-        label="Cover image URL (optional)"
+        label="mobile.search.coverUrlOptional"
         onChangeText={setCoverUrl}
         keyboardType="url"
         value={coverUrl}
       />
       <AppButton
-        label="Save book"
+        label="mobile.search.saveBook"
         loading={busy}
         onPress={() => onSave({ title, authors, pageCount, categories, coverUrl })}
       />
-      <AppButton label="Cancel" onPress={onCancel} variant="secondary" />
+      <AppButton
+        label="mobile.common.cancel"
+        onPress={onCancel}
+        variant="secondary"
+      />
     </View>
   );
 }

@@ -8,6 +8,7 @@ import type {
   MobileSession,
   Shelf,
 } from "./types";
+import { MobileMessageError } from "./translation";
 
 type LoginResponse = MobileSession;
 
@@ -30,9 +31,7 @@ export function setUnauthorizedHandler(handler?: () => void | Promise<void>) {
 function getApiBaseUrl() {
   const baseUrl = process.env.EXPO_PUBLIC_API_URL?.trim().replace(/\/+$/, "");
   if (!baseUrl) {
-    throw new Error(
-      "Set EXPO_PUBLIC_API_URL to the web app URL before starting the mobile app.",
-    );
+    throw new MobileMessageError("mobile.errors.apiUrl");
   }
   return baseUrl;
 }
@@ -61,7 +60,7 @@ async function request<T>(
       data = JSON.parse(text);
     } catch {
       if (response.ok) {
-        throw new Error("The server returned an invalid response.");
+        throw new MobileMessageError("mobile.errors.invalidServerResponse");
       }
     }
   }
@@ -77,7 +76,10 @@ async function request<T>(
       "error" in data &&
       typeof data.error === "string"
         ? data.error
-        : `Request failed (${response.status}).`;
+      : new MobileMessageError("mobile.errors.requestFailed", {
+          status: response.status,
+        });
+    if (message instanceof MobileMessageError) throw message;
     throw new ApiError(message, response.status);
   }
   return data as T;
@@ -159,7 +161,9 @@ export const mobileApi = {
 
   async uploadAvatar(uri: string, fileName: string, mimeType: string) {
     const imageResponse = await fetch(uri);
-    if (!imageResponse.ok) throw new Error("Could not read the selected image.");
+    if (!imageResponse.ok) {
+      throw new MobileMessageError("mobile.errors.readSelectedImage");
+    }
     const image = await imageResponse.blob();
     const formData = new FormData();
     formData.append(

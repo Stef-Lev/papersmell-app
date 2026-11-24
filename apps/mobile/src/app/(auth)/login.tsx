@@ -3,30 +3,38 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LocalizedText as Text } from "../../components/localized-text";
+import { BrandMark } from "../../components/brand-mark";
 import { AppButton } from "../../components/app-button";
 import { Notice } from "../../components/notice";
 import { Panel } from "../../components/panel";
 import { TextField } from "../../components/text-field";
-import { radius, spacing, type ThemeColors } from "../../lib/theme";
+import { spacing, type ThemeColors } from "../../lib/theme";
+import { getErrorMessage, translateMessage } from "../../lib/translation";
 import { useAuth } from "../../providers/auth-provider";
+import { usePreferences } from "../../providers/preferences-provider";
 import { useThemedStyles } from "../../lib/use-themed-styles";
 
 export default function LoginScreen() {
   const styles = useThemedStyles(createStyles);
   const { signIn, authError } = useAuth();
+  const { locale } = usePreferences();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
   async function submit() {
+    if (!email.trim() || !password) {
+      setError(translateMessage("mobile.errors.validEmailPassword", locale));
+      return;
+    }
     setBusy(true);
     setError("");
     try {
       await signIn(email.trim(), password);
       router.replace("/(tabs)/home");
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not sign in.");
+      setError(getErrorMessage(cause, locale, "mobile.errors.signIn"));
     } finally {
       setBusy(false);
     }
@@ -36,13 +44,12 @@ export default function LoginScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.content}>
         <View style={styles.brand}>
-          <View style={styles.mark}><Text style={styles.markText}>P</Text></View>
+          <BrandMark />
           <Text style={styles.brandName}>PaperSmell</Text>
         </View>
         <View style={styles.intro}>
-          <Text style={styles.eyebrow}>YOUR READING COMPANION</Text>
-          <Text style={styles.title}>Welcome back.</Text>
-          <Text style={styles.subtitle}>Sign in to pick up where you left off.</Text>
+          <Text messageKey="mobile.auth.login" style={styles.title} />
+          <Text messageKey="mobile.auth.welcome" style={styles.subtitle} />
         </View>
         <Panel style={styles.form}>
           {authError ? <Notice message={authError} /> : null}
@@ -50,21 +57,19 @@ export default function LoginScreen() {
           <TextField
             autoCapitalize="none"
             keyboardType="email-address"
-            label="Email"
+            label="mobile.auth.email"
             onChangeText={setEmail}
-            placeholder="you@example.com"
             value={email}
           />
           <TextField
             autoCapitalize="none"
-            label="Password"
+            label="mobile.auth.password"
             onChangeText={setPassword}
             secureTextEntry
             value={password}
           />
           <AppButton
-            disabled={!email.trim() || !password}
-            label="Sign in"
+            label="mobile.auth.login"
             loading={busy}
             onPress={() => void submit()}
           />
@@ -73,15 +78,18 @@ export default function LoginScreen() {
             onPress={() => router.push("/(auth)/forgot-password")}
             style={styles.link}
           >
-            <Text style={styles.linkText}>Forgot your password?</Text>
+            <Text messageKey="mobile.auth.forgotPassword" style={styles.linkText} />
           </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => router.push("/(auth)/register")}
-            style={styles.link}
-          >
-            <Text style={styles.linkText}>New to PaperSmell? Create an account</Text>
-          </Pressable>
+          <View style={styles.footer}>
+            <Text messageKey="mobile.auth.noAccount" style={styles.footerText} />
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => router.push("/(auth)/register")}
+              style={styles.footerLink}
+            >
+              <Text messageKey="mobile.auth.createAccount" style={styles.linkText} />
+            </Pressable>
+          </View>
         </Panel>
       </View>
     </SafeAreaView>
@@ -92,17 +100,14 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   safeArea: { flex: 1, justifyContent: "center", backgroundColor: colors.background },
   content: { gap: spacing.xl, padding: spacing.xl },
   brand: { flexDirection: "row", alignItems: "center", gap: spacing.md },
-  mark: {
-    width: 40, height: 40, alignItems: "center", justifyContent: "center",
-    borderRadius: radius.sm, backgroundColor: colors.primary,
-  },
-  markText: { color: colors.white, fontSize: 22, fontWeight: "800" },
   brandName: { color: colors.text, fontSize: 18, fontWeight: "800" },
-  intro: { gap: spacing.sm, marginTop: spacing.xl },
-  eyebrow: { color: colors.primary, fontSize: 12, fontWeight: "800", letterSpacing: 1.4 },
-  title: { color: colors.text, fontSize: 34, fontWeight: "800" },
+  intro: { gap: spacing.sm },
+  title: { color: colors.text, fontSize: 30, fontWeight: "800" },
   subtitle: { color: colors.muted, fontSize: 15, lineHeight: 22 },
   form: { gap: spacing.lg, padding: spacing.xl },
   link: { alignItems: "center", paddingVertical: spacing.sm },
   linkText: { color: colors.primary, fontSize: 14, fontWeight: "600", textAlign: "center" },
+  footer: { flexDirection: "row", justifyContent: "center", alignItems: "center" },
+  footerText: { color: colors.muted, fontSize: 14 },
+  footerLink: { paddingVertical: spacing.sm, paddingLeft: spacing.xs },
 });

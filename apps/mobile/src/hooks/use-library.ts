@@ -2,8 +2,11 @@ import { useCallback, useRef, useState } from "react";
 import { useFocusEffect } from "expo-router";
 import { mobileApi } from "../lib/api";
 import type { BookCollection, BookEntry } from "../lib/types";
+import { getErrorMessage } from "../lib/translation";
+import { usePreferences } from "../providers/preferences-provider";
 
 export function useLibrary() {
+  const { locale } = usePreferences();
   const [entries, setEntries] = useState<BookEntry[]>([]);
   const [collections, setCollections] = useState<BookCollection[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -21,14 +24,12 @@ export function useLibrary() {
       setCollections(response.collections);
     } catch (cause) {
       if (currentRequest === requestId.current) {
-        setError(
-          cause instanceof Error ? cause.message : "Could not load your library.",
-        );
+        setError(getErrorMessage(cause, locale, "mobile.errors.loadLibrary"));
       }
     } finally {
       if (currentRequest === requestId.current) setIsLoading(false);
     }
-  }, []);
+  }, [locale]);
 
   useFocusEffect(
     useCallback(() => {

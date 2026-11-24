@@ -14,6 +14,7 @@ import {
   lightColors,
   type ThemeColors,
 } from "../lib/theme";
+import { getErrorMessage } from "../lib/translation";
 
 export type Locale = "en" | "el";
 export type ThemePreference = "system" | "light" | "dark";
@@ -58,16 +59,14 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
       .catch((cause: unknown) => {
         if (active) {
           setPreferencesError(
-            cause instanceof Error
-              ? cause.message
-              : "Could not load saved preferences.",
+            getErrorMessage(cause, locale, "mobile.errors.loadPreferences"),
           );
         }
       });
     return () => {
       active = false;
     };
-  }, []);
+  }, [locale]);
 
   const setLocale = useCallback(async (nextLocale: Locale) => {
     await SecureStore.setItemAsync("papersmell-locale", nextLocale);

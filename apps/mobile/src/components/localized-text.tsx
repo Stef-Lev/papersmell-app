@@ -1,23 +1,38 @@
 import { Text as NativeText, type TextProps } from "react-native";
 import type { ReactNode } from "react";
-import { translateText } from "../lib/translation";
+import {
+  translateMessage,
+  type MessageValues,
+  type MobileMessageKey,
+} from "../lib/translation";
 import { usePreferences } from "../providers/preferences-provider";
 
 export function LocalizedText({
   children,
   accessibilityLabel,
+  accessibilityLabelKey,
+  accessibilityValues,
+  messageKey,
+  values,
   ...props
-}: TextProps & { children?: ReactNode }) {
+}: TextProps & {
+  children?: ReactNode;
+  messageKey?: MobileMessageKey;
+  values?: MessageValues;
+  accessibilityLabelKey?: MobileMessageKey;
+  accessibilityValues?: MessageValues;
+}) {
   const { locale } = usePreferences();
-  const localizedChildren =
-    typeof children === "string" ? translateText(children, locale) : children;
+  const localizedChildren = messageKey
+    ? translateMessage(messageKey, locale, values)
+    : children;
   return (
     <NativeText
       {...props}
       accessibilityLabel={
-        accessibilityLabel
-          ? translateText(accessibilityLabel, locale)
-          : undefined
+        accessibilityLabelKey
+          ? translateMessage(accessibilityLabelKey, locale, accessibilityValues)
+          : accessibilityLabel
       }
     >
       {localizedChildren}

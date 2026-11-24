@@ -17,7 +17,7 @@ import { spacing, type ThemeColors } from "../../lib/theme";
 import { useLibrary } from "../../hooks/use-library";
 import { useThemedStyles } from "../../lib/use-themed-styles";
 import { usePreferences } from "../../providers/preferences-provider";
-import { translateText } from "../../lib/translation";
+import { translateMessage } from "../../lib/translation";
 
 export default function LibraryScreen() {
   const styles = useThemedStyles(createStyles);
@@ -89,20 +89,22 @@ export default function LibraryScreen() {
   if (isLoading) return <LoadingState />;
   return (
     <Screen
-      title="My library"
-      subtitle={`${entries.length} ${translateText("books on your shelves", locale)}`}
+      bottomNavigation
+      titleKey="mobile.library.title"
+      subtitleKey="mobile.library.booksOnShelves"
+      subtitleValues={{ count: entries.length }}
     >
       {error ? <Notice message={error} /> : null}
       <AppButton
-        label="Manage collections"
+        label="mobile.library.manageCollections"
         onPress={() => router.push("/collections")}
         variant="secondary"
       />
       <TextField
         autoCapitalize="none"
-        label="Search your library"
+        label="mobile.library.search"
         onChangeText={setQuery}
-        placeholder="Title, author, or ISBN"
+        placeholder="mobile.library.searchPlaceholder"
         value={query}
       />
       <ShelfSelector
@@ -116,42 +118,43 @@ export default function LibraryScreen() {
       />
       <View style={styles.filters}>
         <OptionSelector
-          label="Author"
-          localizeOptions={false}
+          labelKey="mobile.library.author"
           onChange={setSelectedAuthors}
           options={authors.map((author) => ({ value: author, label: author }))}
           selected={selectedAuthors}
         />
         <OptionSelector
-          label="Category"
-          localizeOptions={false}
+          labelKey="mobile.library.category"
           onChange={setSelectedCategories}
           options={categories.map((category) => ({ value: category, label: category }))}
           selected={selectedCategories}
         />
         <OptionSelector
-          label="Collection"
-          localizeOptions={false}
+          labelKey="mobile.library.collection"
           onChange={setSelectedCollections}
           options={collections.map(({ id, name }) => ({ value: id, label: name }))}
           selected={selectedCollections}
         />
         <OptionSelector
-          label="Sort by"
+          labelKey="mobile.library.sortBy"
           multiple={false}
           onChange={(values) => setSortBy((values[0] as LibrarySort) ?? LibrarySort.Title)}
           options={[
-            { value: LibrarySort.Title, label: "Title" },
-            { value: LibrarySort.Author, label: "Author" },
-            { value: LibrarySort.Rating, label: "Rating" },
-            { value: LibrarySort.PageCount, label: "Page count" },
-            { value: LibrarySort.DateAdded, label: "Date added" },
+            { value: LibrarySort.Title, messageKey: "mobile.library.sortTitle" },
+            { value: LibrarySort.Author, messageKey: "mobile.library.sortAuthor" },
+            { value: LibrarySort.Rating, messageKey: "mobile.library.sortRating" },
+            { value: LibrarySort.PageCount, messageKey: "mobile.library.sortPageCount" },
+            { value: LibrarySort.DateAdded, messageKey: "mobile.library.sortDateAdded" },
           ]}
           selected={[sortBy]}
         />
       </View>
       <Text style={styles.count}>
-        {filtered.length} {translateText(filtered.length === 1 ? "book" : "books", locale)}
+        {filtered.length}{" "}
+        {translateMessage(
+          filtered.length === 1 ? "mobile.common.book" : "mobile.common.books",
+          locale,
+        )}
       </Text>
       {filtered.length ? (
         filtered.map((entry) => (
@@ -169,11 +172,15 @@ export default function LibraryScreen() {
       ) : (
         <Panel>
           <EmptyState
-            title={entries.length ? "No books match these filters" : "Your library is waiting"}
-            description={
+            titleKey={
               entries.length
-                ? "Try a different shelf or search term."
-                : "Search the catalog and add a book to get started."
+                ? "mobile.library.noBooksMatch"
+                : "mobile.library.emptyTitle"
+            }
+            descriptionKey={
+              entries.length
+                ? "mobile.library.tryDifferentFilter"
+                : "mobile.library.emptyDescription"
             }
           />
         </Panel>

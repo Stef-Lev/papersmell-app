@@ -3,22 +3,28 @@ import { LocalizedText as Text } from "./localized-text";
 import { radius, spacing } from "../lib/theme";
 import { useThemedStyles } from "../lib/use-themed-styles";
 import type { ThemeColors } from "../lib/theme";
+import type {
+  MessageValues,
+  MobileMessageKey,
+} from "../lib/translation";
 
 export function MetricCard({
-  label,
+  labelKey,
+  labelValues,
   value,
-  detail,
+  detailKey,
 }: {
-  label: string;
+  labelKey: MobileMessageKey;
+  labelValues?: MessageValues;
   value: string | number;
-  detail?: string;
+  detailKey?: MobileMessageKey;
 }) {
   const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.card}>
-      <Text style={styles.label}>{label}</Text>
+      <Text messageKey={labelKey} style={styles.label} values={labelValues} />
       <Text style={styles.value}>{value}</Text>
-      {detail ? <Text style={styles.detail}>{detail}</Text> : null}
+      {detailKey ? <Text messageKey={detailKey} style={styles.detail} /> : null}
     </View>
   );
 }

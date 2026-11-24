@@ -8,9 +8,10 @@ import { LocalizedText as Text } from "./localized-text";
 import { radius, spacing } from "../lib/theme";
 import { usePreferences } from "../providers/preferences-provider";
 import { useThemedStyles } from "../lib/use-themed-styles";
+import type { MobileMessageKey } from "../lib/translation";
 
 type Props = {
-  label: string;
+  label: MobileMessageKey;
   onPress: () => void;
   disabled?: boolean;
   loading?: boolean;
@@ -45,10 +46,16 @@ export function AppButton({
     >
       {loading ? (
         <ActivityIndicator
-          color={variant === "primary" ? colors.white : colors.primary}
+          color={
+            variant === "primary"
+              ? colors.white
+              : variant === "danger"
+                ? colors.danger
+                : colors.primary
+          }
         />
       ) : (
-        <Text style={[styles.label, styles[`${variant}Label`]]}>{label}</Text>
+        <Text messageKey={label} style={[styles.label, styles[`${variant}Label`]]} />
       )}
     </Pressable>
   );
@@ -68,11 +75,15 @@ const createStyles = (colors: import("../lib/theme").ThemeColors) => StyleSheet.
     borderColor: colors.border,
     borderWidth: 1,
   },
-  danger: { backgroundColor: colors.coralSoft },
+  danger: {
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    borderWidth: 1,
+  },
   label: { fontSize: 15, fontWeight: "700" },
   primaryLabel: { color: colors.white },
   secondaryLabel: { color: colors.primary },
   dangerLabel: { color: colors.danger },
-  disabled: { opacity: 0.55 },
+  disabled: { opacity: 0.5 },
   pressed: { opacity: 0.82 },
 });

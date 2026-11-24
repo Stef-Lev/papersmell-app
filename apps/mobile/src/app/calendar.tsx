@@ -12,7 +12,7 @@ import { radius, spacing, type ThemeColors } from "../lib/theme";
 import { useLibrary } from "../hooks/use-library";
 import { useThemedStyles } from "../lib/use-themed-styles";
 import { usePreferences } from "../providers/preferences-provider";
-import { translateText } from "../lib/translation";
+import { translateMessage } from "../lib/translation";
 
 function dateOnly(date: Date) {
   return date.toISOString().slice(0, 10);
@@ -56,14 +56,14 @@ export default function CalendarScreen() {
   if (isLoading) return <LoadingState />;
   return (
     <Screen
-      title="Reading calendar"
-      subtitle="See the days your books were in progress."
+      titleKey="mobile.calendar.title"
+      subtitleKey="mobile.calendar.subtitle"
     >
       {error ? <Notice message={error} /> : null}
       <Panel style={styles.calendar}>
         <View style={styles.monthHeader}>
           <Pressable
-            accessibilityLabel={translateText("Previous month", locale)}
+            accessibilityLabel={translateMessage("mobile.calendar.previousMonth", locale)}
             accessibilityRole="button"
             onPress={() => changeMonth(-1)}
             style={styles.monthButton}
@@ -72,7 +72,7 @@ export default function CalendarScreen() {
           </Pressable>
           <Text style={styles.monthTitle}>{monthLabel}</Text>
           <Pressable
-            accessibilityLabel={translateText("Next month", locale)}
+            accessibilityLabel={translateMessage("mobile.calendar.nextMonth", locale)}
             accessibilityRole="button"
             onPress={() => changeMonth(1)}
             style={styles.monthButton}
@@ -91,7 +91,11 @@ export default function CalendarScreen() {
             const selected = day.date === selectedDate;
             return (
               <Pressable
-                accessibilityLabel={`${day.date}, ${day.books.length} books in progress`}
+                accessibilityLabel={translateMessage(
+                  "mobile.calendar.dayAccessibility",
+                  locale,
+                  { date: day.date, count: day.books.length },
+                )}
                 accessibilityRole="button"
                 accessibilityState={{ selected }}
                 key={day.date}
@@ -114,7 +118,12 @@ export default function CalendarScreen() {
       <View style={styles.resultsHeader}>
         <Text style={styles.sectionTitle}>{selectedDate}</Text>
         <Text style={styles.caption}>
-          {selectedBooks.length} {translateText(selectedBooks.length === 1 ? "book" : "books", locale)} {translateText("in progress", locale)}
+          {selectedBooks.length}{" "}
+          {translateMessage(
+            selectedBooks.length === 1 ? "mobile.common.book" : "mobile.common.books",
+            locale,
+          )}{" "}
+          {translateMessage("mobile.common.inProgress", locale)}
         </Text>
       </View>
       {selectedBooks.length ? (
@@ -132,8 +141,8 @@ export default function CalendarScreen() {
       ) : (
         <Panel>
           <EmptyState
-            title="A quiet reading day"
-            description="Books with recorded start and finish dates appear here."
+            titleKey="mobile.calendar.quietDay"
+            descriptionKey="mobile.calendar.emptyDescription"
           />
         </Panel>
       )}

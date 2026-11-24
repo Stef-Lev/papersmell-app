@@ -1,10 +1,11 @@
 import { Pressable, ScrollView, StyleSheet } from "react-native";
 import { LocalizedText as Text } from "./localized-text";
 import type { Shelf } from "../lib/types";
-import { shelfLabels, shelves } from "../lib/types";
+import { shelves } from "../lib/types";
 import { radius, spacing } from "../lib/theme";
 import { useThemedStyles } from "../lib/use-themed-styles";
 import type { ThemeColors } from "../lib/theme";
+import { getShelfMessageKey } from "../lib/translation";
 
 type Filter = Shelf | "all";
 
@@ -27,7 +28,8 @@ export function ShelfSelector({
     >
       {options.map((shelf) => {
         const selected = shelf === value;
-        const label = shelf === "all" ? "All books" : shelfLabels[shelf];
+        const labelKey =
+          shelf === "all" ? "mobile.common.allBooks" : getShelfMessageKey(shelf);
         return (
           <Pressable
             accessibilityRole="button"
@@ -36,9 +38,10 @@ export function ShelfSelector({
             onPress={() => onChange(shelf)}
             style={[styles.chip, selected && styles.selected]}
           >
-            <Text style={[styles.label, selected && styles.selectedLabel]}>
-              {label}
-            </Text>
+            <Text
+              messageKey={labelKey}
+              style={[styles.label, selected && styles.selectedLabel]}
+            />
           </Pressable>
         );
       })}

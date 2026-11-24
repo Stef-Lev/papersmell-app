@@ -4,14 +4,19 @@ import { spacing } from "../lib/theme";
 import { usePreferences } from "../providers/preferences-provider";
 import { useThemedStyles } from "../lib/use-themed-styles";
 import type { ThemeColors } from "../lib/theme";
+import type { MobileMessageKey } from "../lib/translation";
 
-export function LoadingState({ label = "Loading your books…" }: { label?: string }) {
+export function LoadingState({
+  label = "mobile.common.loadingBooks",
+}: {
+  label?: MobileMessageKey;
+}) {
   const { colors } = usePreferences();
   const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.container}>
       <ActivityIndicator color={colors.primary} size="large" />
-      <Text style={styles.label}>{label}</Text>
+      <Text messageKey={label} style={styles.label} />
     </View>
   );
 }

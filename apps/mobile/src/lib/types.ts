@@ -19,13 +19,6 @@ export enum LibrarySort {
   DateAdded = "date-added",
 }
 
-export const shelfLabels: Record<Shelf, string> = {
-  "to-read": "To Read",
-  "currently-reading": "Currently Reading",
-  read: "Read",
-  "did-not-finish": "Did Not Finish",
-};
-
 export type BookSource =
   | "open-library"
   | "biblionet"

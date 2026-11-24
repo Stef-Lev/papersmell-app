@@ -12,6 +12,7 @@ import { LocalizedText as Text } from "./localized-text";
 import { radius, spacing } from "../lib/theme";
 import { normalizeBarcodeIsbn } from "../lib/barcode-isbn";
 import { usePreferences } from "../providers/preferences-provider";
+import { translateMessage } from "../lib/translation";
 import { useThemedStyles } from "../lib/use-themed-styles";
 import type { ThemeColors } from "../lib/theme";
 
@@ -25,7 +26,7 @@ export function BarcodeScanner({
   const [permission, requestPermission] = useCameraPermissions();
   const [locked, setLocked] = useState(false);
   const [cameraError, setCameraError] = useState("");
-  const { colors } = usePreferences();
+  const { colors, locale } = usePreferences();
   const styles = useThemedStyles(createStyles);
 
   function handleBarcode(data: string) {
@@ -44,9 +45,9 @@ export function BarcodeScanner({
     >
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.title}>Scan a book barcode</Text>
+          <Text messageKey="mobile.scanner.title" style={styles.title} />
           <Pressable accessibilityRole="button" onPress={onClose}>
-            <Text style={styles.close}>Close</Text>
+            <Text messageKey="mobile.scanner.close" style={styles.close} />
           </Pressable>
         </View>
         {permission?.granted ? (
@@ -58,11 +59,16 @@ export function BarcodeScanner({
           />
         ) : permission ? (
           <View style={styles.permission}>
-            <Text style={styles.message}>
-              Camera access is needed to scan an ISBN barcode.
-            </Text>
+            <Text
+              messageKey="mobile.scanner.cameraPermission"
+              style={styles.message}
+            />
             <AppButton
-              label={permission.canAskAgain ? "Allow camera access" : "Camera access unavailable"}
+              label={
+                permission.canAskAgain
+                  ? "mobile.scanner.allowCamera"
+                  : "mobile.scanner.cameraUnavailable"
+              }
               onPress={() => {
                 if (permission.canAskAgain) void requestPermission();
               }}
@@ -74,8 +80,10 @@ export function BarcodeScanner({
         )}
         <Text style={styles.hint}>
           {cameraError
-            ? `The camera could not start: ${cameraError}. Enter the ISBN manually instead.`
-            : "Point the camera at the 13-digit ISBN barcode on the book."}
+            ? translateMessage("mobile.scanner.cameraError", locale, {
+                error: cameraError,
+              })
+            : translateMessage("mobile.scanner.hint", locale)}
         </Text>
       </View>
     </Modal>

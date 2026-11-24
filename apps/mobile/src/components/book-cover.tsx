@@ -4,6 +4,8 @@ import { LocalizedText as Text } from "./localized-text";
 import { radius } from "../lib/theme";
 import { useThemedStyles } from "../lib/use-themed-styles";
 import type { ThemeColors } from "../lib/theme";
+import { usePreferences } from "../providers/preferences-provider";
+import { translateMessage } from "../lib/translation";
 
 export function BookCover({
   url,
@@ -15,6 +17,7 @@ export function BookCover({
   compact?: boolean;
 }) {
   const [failed, setFailed] = useState(false);
+  const { locale } = usePreferences();
   const styles = useThemedStyles(createStyles);
   const size = compact ? styles.compact : styles.regular;
   if (!url || failed) {
@@ -27,7 +30,11 @@ export function BookCover({
   return (
     <Image
       alt={title}
-      accessibilityLabel={`${title} cover`}
+      accessibilityLabel={translateMessage(
+        "mobile.accessibility.bookCover",
+        locale,
+        { title },
+      )}
       onError={() => setFailed(true)}
       resizeMode="cover"
       source={{ uri: url }}

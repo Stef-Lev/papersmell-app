@@ -6,7 +6,7 @@ import { usePreferences } from "../../providers/preferences-provider";
 export default function AuthLayout() {
   const { session, isLoading } = useAuth();
   const { colors } = usePreferences();
-  if (isLoading) return <LoadingState label="Opening PaperSmell…" />;
+  if (isLoading) return <LoadingState label="mobile.common.opening" />;
   if (session) return <Redirect href="/(tabs)/home" />;
   return (
     <Stack
